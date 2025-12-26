@@ -1,0 +1,556 @@
+/* Student Pages Styles */
+
+/* Page Loading */
+.page-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: var(--spacing-4);
+    color: var(--text-muted);
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-8);
+    flex-wrap: wrap;
+    gap: var(--spacing-4);
+}
+
+.page-header h1 {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--spacing-1);
+}
+
+.page-header p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--spacing-3);
+}
+
+.header-actions .form-select {
+    min-width: 180px;
+}
+
+/* Summary Grid */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-5);
+    margin-bottom: var(--spacing-6);
+}
+
+.summary-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-5);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    transition: all var(--transition-base);
+}
+
+.summary-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.summary-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.summary-icon.total {
+    background: var(--primary-50);
+    color: var(--primary-500);
+}
+
+.summary-icon.present {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.summary-icon.absent {
+    background: var(--error-light);
+    color: var(--error);
+}
+
+.summary-icon.percentage {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.summary-content h3 {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.summary-content p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: var(--spacing-1) 0 0;
+}
+
+.status-indicator {
+    position: absolute;
+    top: var(--spacing-3);
+    right: var(--spacing-3);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-sm);
+}
+
+.status-indicator.good {
+    background: var(--success-light);
+    color: var(--success-dark);
+}
+
+.status-indicator.warning {
+    background: var(--warning-light);
+    color: var(--warning-dark);
+}
+
+/* Attendance Progress Card */
+.attendance-progress-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-6);
+    margin-bottom: var(--spacing-6);
+    box-shadow: var(--shadow-sm);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-3);
+    font-weight: 500;
+}
+
+.progress-header .percentage {
+    font-size: var(--text-xl);
+    font-weight: 700;
+}
+
+.progress-header .percentage.good {
+    color: var(--success);
+}
+
+.progress-header .percentage.warning {
+    color: var(--warning);
+}
+
+.progress-bar {
+    height: 12px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--spacing-3);
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 1s ease-out;
+}
+
+.progress-fill.good {
+    background: linear-gradient(90deg, var(--success), #34d399);
+}
+
+.progress-fill.warning {
+    background: linear-gradient(90deg, var(--warning), #fbbf24);
+}
+
+.progress-note {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Section Card */
+.section-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.section-header {
+    padding: var(--spacing-5) var(--spacing-6);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-header h2 {
+    font-size: var(--text-lg);
+    margin: 0;
+}
+
+.record-count {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: var(--spacing-1) var(--spacing-3);
+    border-radius: var(--radius-full);
+}
+
+/* Attendance Table */
+.attendance-table .date-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.date-cell .date-number {
+    width: 35px;
+    height: 35px;
+    background: var(--primary-50);
+    color: var(--primary-600);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.date-cell .date-month {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.subject-cell {
+    display: flex;
+    flex-direction: column;
+}
+
+.subject-name {
+    font-weight: 500;
+}
+
+.subject-code {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.status-icon {
+    margin-right: var(--spacing-1);
+}
+
+.status-icon.present {
+    color: var(--success);
+}
+
+.status-icon.absent {
+    color: var(--error);
+}
+
+.status-icon.late {
+    color: var(--warning);
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-12);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.empty-state svg {
+    margin-bottom: var(--spacing-4);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-2);
+}
+
+.empty-state p {
+    font-size: var(--text-sm);
+    margin: 0;
+}
+
+/* Fee Cards */
+.fee-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-5);
+    margin-bottom: var(--spacing-6);
+}
+
+.fee-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    border-left: 4px solid var(--primary-500);
+}
+
+.fee-card.pending {
+    border-left-color: var(--warning);
+}
+
+.fee-card.overdue {
+    border-left-color: var(--error);
+}
+
+.fee-card.paid {
+    border-left-color: var(--success);
+}
+
+.fee-card-header {
+    padding: var(--spacing-5);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.fee-card-header h3 {
+    font-size: var(--text-base);
+    margin: 0 0 var(--spacing-1);
+}
+
+.fee-card-header p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.fee-card-body {
+    padding: var(--spacing-5);
+}
+
+.fee-amount-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-2);
+}
+
+.fee-amount-row.total {
+    margin-top: var(--spacing-3);
+    padding-top: var(--spacing-3);
+    border-top: 1px dashed var(--border-color);
+    font-weight: 600;
+}
+
+.fee-card-footer {
+    padding: var(--spacing-4) var(--spacing-5);
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.due-date {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+/* Marks Table */
+.marks-grid {
+    display: grid;
+    gap: var(--spacing-5);
+}
+
+.semester-section {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.semester-header {
+    padding: var(--spacing-4) var(--spacing-6);
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.semester-header h3 {
+    margin: 0;
+    color: white;
+}
+
+.sgpa-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: var(--spacing-2) var(--spacing-4);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
+
+.marks-table .grade-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.grade-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: var(--text-sm);
+}
+
+.grade-badge.A,
+.grade-badge.A\\+ {
+    background: var(--success-light);
+    color: var(--success-dark);
+}
+
+.grade-badge.B,
+.grade-badge.B\\+ {
+    background: var(--info-light);
+    color: var(--info-dark);
+}
+
+.grade-badge.C,
+.grade-badge.C\\+ {
+    background: var(--warning-light);
+    color: var(--warning-dark);
+}
+
+.grade-badge.D,
+.grade-badge.F {
+    background: var(--error-light);
+    color: var(--error-dark);
+}
+
+/* Notes/Study Materials */
+.notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-5);
+}
+
+.note-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.note-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+}
+
+.note-card-header {
+    padding: var(--spacing-5);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.note-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-2);
+}
+
+.note-type-badge.notes {
+    background: var(--primary-50);
+    color: var(--primary-600);
+}
+
+.note-type-badge.assignment {
+    background: var(--warning-light);
+    color: var(--warning-dark);
+}
+
+.note-type-badge.syllabus {
+    background: var(--info-light);
+    color: var(--info-dark);
+}
+
+.note-card-header h3 {
+    font-size: var(--text-base);
+    margin: 0 0 var(--spacing-1);
+}
+
+.note-card-header p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.note-card-body {
+    padding: var(--spacing-4) var(--spacing-5);
+}
+
+.note-meta {
+    display: flex;
+    gap: var(--spacing-4);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.note-card-footer {
+    padding: var(--spacing-4) var(--spacing-5);
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fee-cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .notes-grid {
+        grid-template-columns: 1fr;
+    }
+}
