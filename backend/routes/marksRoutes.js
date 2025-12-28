@@ -9,6 +9,8 @@ const {
     updateBacklogAttempt,
     getBacklogAnalytics,
     getPerformanceAnalytics,
+    bulkEnterMarks,
+    getMarksByFilter,
 } = require('../controllers/marksController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -16,7 +18,11 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect);
 
 // Teacher routes
-router.post('/', authorize('teacher'), enterMarks);
+router.post('/', authorize('teacher', 'admin'), enterMarks);
+router.post('/bulk', authorize('teacher', 'admin'), bulkEnterMarks);
+
+// Get marks by filter (for teacher marks entry page)
+router.get('/', authorize('teacher', 'admin'), getMarksByFilter);
 
 // Teacher and Admin routes
 router.get('/class', authorize('teacher', 'admin'), getClassMarks);
@@ -30,3 +36,4 @@ router.get('/backlogs/:studentId', getStudentBacklogs);
 router.post('/backlogs/:id/register', authorize('student'), registerBacklogExam);
 
 module.exports = router;
+

@@ -423,6 +423,90 @@ const getPerformanceAnalytics = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Bulk enter marks for multiple students
+// @route   POST /api/marks/bulk
+// @access  Private (Teacher, Admin)
+const bulkEnterMarks = asyncHandler(async (req, res) => {
+    const { marks } = req.body;
+    // marks: [{ studentId, subjectId, examType, marksObtained, maxMarks, semester }]
+
+    if (!marks || !Array.isArray(marks) || marks.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Marks data is required',
+        });
+    }
+
+    const teacher = await require('../models/Teacher').findOne({ user: req.user.id });
+    const academicYear = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
+
+    const marksRecords = [];
+
+    for (const record of marks) {
+        const student = await Student.findById(record.studentId);
+        if (!student) continue;
+
+        // Upsert marks
+        const marksDoc = await Marks.findOneAndUpdate(
+            {
+                student: record.studentId,
+                subject: record.subjectId,
+                examType: record.examType,
+                academicYear,
+            },
+            {
+                student: record.studentId,
+                subject: record.subjectId,
+                semester: record.semester || student.semester,
+                examType: record.examType,
+                academicYear,
+                maxMarks: record.maxMarks,
+                obtainedMarks: record.marksObtained,
+                enteredBy: teacher?._id || req.user.id,
+            },
+            { upsert: true, new: true }
+        );
+
+        marksRecords.push(marksDoc);
+    }
+
+    res.status(201).json({
+        success: true,
+        message: `Marks saved for ${marksRecords.length} students`,
+        data: marksRecords,
+    });
+});
+
+// @desc    Get marks by filter
+// @route   GET /api/marks
+// @access  Private (Teacher, Admin)
+const getMarksByFilter = asyncHandler(async (req, res) => {
+    const { subjectId, examType, department, semester } = req.query;
+
+    const query = {};
+    if (subjectId) query.subject = subjectId;
+    if (examType) query.examType = examType;
+    if (semester) query.semester = parseInt(semester);
+
+    const marks = await Marks.find(query)
+        .populate({
+            path: 'student',
+            match: department ? { department } : {},
+            populate: { path: 'user', select: 'firstName lastName' },
+        })
+        .populate('subject', 'name code')
+        .sort({ createdAt: -1 });
+
+    // Filter out null students (those that didn't match department filter)
+    const filteredMarks = marks.filter(m => m.student !== null);
+
+    res.json({
+        success: true,
+        count: filteredMarks.length,
+        data: filteredMarks,
+    });
+});
+
 module.exports = {
     enterMarks,
     getStudentMarks,
@@ -432,4 +516,7 @@ module.exports = {
     updateBacklogAttempt,
     getBacklogAnalytics,
     getPerformanceAnalytics,
+    bulkEnterMarks,
+    getMarksByFilter,
 };
+

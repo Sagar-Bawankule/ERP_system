@@ -1,39 +1,102 @@
 import React, { useState, useEffect } from 'react';
-import { FiSave, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
+import { FiSave, FiEdit2, FiCheck, FiX, FiUsers } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
 
 const TeacherMarks = () => {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [students, setStudents] = useState([]);
+    const [subjects, setSubjects] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('');
     const [selectedExam, setSelectedExam] = useState('Internal 1');
     const [marksData, setMarksData] = useState({});
     const [editMode, setEditMode] = useState(false);
+    const [maxMarks, setMaxMarks] = useState(40);
 
     useEffect(() => {
-        loadDemoData();
+        fetchSubjects();
     }, []);
 
-    const loadDemoData = () => {
-        // Demo students with marks
-        const demoStudents = [
-            { _id: '1', rollNumber: 'CE2024001', name: 'Rahul Kumar' },
-            { _id: '2', rollNumber: 'CE2024002', name: 'Priya Singh' },
-            { _id: '3', rollNumber: 'CE2024003', name: 'Amit Jadhav' },
-            { _id: '4', rollNumber: 'CE2024004', name: 'Sneha Patil' },
-            { _id: '5', rollNumber: 'CE2024005', name: 'Vikram Sharma' },
-        ];
-        setStudents(demoStudents);
+    useEffect(() => {
+        if (selectedClass && selectedSubject) {
+            fetchStudentsAndMarks();
+        } else {
+            setStudents([]);
+            setMarksData({});
+        }
+    }, [selectedClass, selectedSubject, selectedExam]);
 
-        // Initialize marks
-        const initialMarks = {};
-        demoStudents.forEach(s => {
-            initialMarks[s._id] = { obtained: Math.floor(Math.random() * 30) + 10, max: 40 };
-        });
-        setMarksData(initialMarks);
+    const fetchSubjects = async () => {
+        try {
+            const res = await api.get('/subjects');
+            setSubjects(res.data.data || []);
+        } catch (error) {
+            console.error('Error fetching subjects:', error);
+            toast.error('Failed to load subjects');
+        }
+    };
+
+    const fetchStudentsAndMarks = async () => {
+        setLoading(true);
+        try {
+            // Parse selected class
+            const [department, semester, section] = selectedClass.split('-');
+
+            // Fetch students
+            const studentsRes = await api.get('/students', {
+                params: {
+                    department: department.trim(),
+                    semester: parseInt(semester),
+                    section: section?.trim() || 'A'
+                }
+            });
+
+            const studentList = studentsRes.data.data || [];
+            setStudents(studentList);
+
+            // Initialize marks for all students
+            const initialMarks = {};
+            studentList.forEach(s => {
+                initialMarks[s._id] = { obtained: 0, max: maxMarks };
+            });
+
+            // Try to fetch existing marks
+            try {
+                const marksRes = await api.get('/marks', {
+                    params: {
+                        subjectId: selectedSubject,
+                        examType: selectedExam,
+                        department: department.trim(),
+                        semester: parseInt(semester)
+                    }
+                });
+
+                if (marksRes.data.data && marksRes.data.data.length > 0) {
+                    marksRes.data.data.forEach(mark => {
+                        const studentId = mark.student?._id || mark.student;
+                        if (initialMarks[studentId]) {
+                            initialMarks[studentId] = {
+                                obtained: mark.marksObtained || 0,
+                                max: mark.maxMarks || maxMarks,
+                                markId: mark._id
+                            };
+                        }
+                    });
+                    toast.info('Existing marks loaded');
+                }
+            } catch (err) {
+                console.log('No existing marks found');
+            }
+
+            setMarksData(initialMarks);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            toast.error('Failed to load students');
+            setStudents([]);
+        }
         setLoading(false);
     };
 
@@ -41,7 +104,10 @@ const TeacherMarks = () => {
         const numValue = parseInt(value) || 0;
         setMarksData(prev => ({
             ...prev,
-            [studentId]: { ...prev[studentId], obtained: Math.min(numValue, prev[studentId].max) }
+            [studentId]: {
+                ...prev[studentId],
+                obtained: Math.min(Math.max(0, numValue), prev[studentId]?.max || maxMarks)
+            }
         }));
     };
 
@@ -57,23 +123,58 @@ const TeacherMarks = () => {
     };
 
     const handleSubmit = async () => {
+        if (!selectedClass || !selectedSubject) {
+            toast.error('Please select class and subject');
+            return;
+        }
+
+        if (students.length === 0) {
+            toast.error('No students to save marks');
+            return;
+        }
+
+        setSubmitting(true);
         try {
-            // API call would go here
+            const marksToSave = students.map(student => ({
+                studentId: student._id,
+                subjectId: selectedSubject,
+                examType: selectedExam,
+                marksObtained: marksData[student._id]?.obtained || 0,
+                maxMarks: marksData[student._id]?.max || maxMarks,
+                semester: student.semester
+            }));
+
+            await api.post('/marks/bulk', { marks: marksToSave });
+
             toast.success('Marks saved successfully!');
             setEditMode(false);
         } catch (error) {
-            toast.error('Failed to save marks');
+            console.error('Error saving marks:', error);
+            toast.error(error.response?.data?.message || 'Failed to save marks');
         }
+        setSubmitting(false);
     };
 
-    if (loading) {
-        return (
-            <div className="page-loading">
-                <div className="spinner"></div>
-                <p>Loading students...</p>
-            </div>
-        );
-    }
+    // Generate class options from subjects
+    const classOptions = [...new Set(subjects.map(s => `${s.department}-${s.semester}-A`))];
+
+    // Update max marks based on exam type
+    useEffect(() => {
+        switch (selectedExam) {
+            case 'Internal 1':
+            case 'Internal 2':
+                setMaxMarks(40);
+                break;
+            case 'Mid Term':
+                setMaxMarks(50);
+                break;
+            case 'End Term':
+                setMaxMarks(100);
+                break;
+            default:
+                setMaxMarks(40);
+        }
+    }, [selectedExam]);
 
     return (
         <div className="student-page animate-fade-in">
@@ -85,15 +186,23 @@ const TeacherMarks = () => {
                 <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
                     {editMode ? (
                         <>
-                            <button className="btn btn-primary" onClick={handleSubmit}>
-                                <FiCheck /> Save Marks
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleSubmit}
+                                disabled={submitting}
+                            >
+                                <FiCheck /> {submitting ? 'Saving...' : 'Save Marks'}
                             </button>
                             <button className="btn btn-secondary" onClick={() => setEditMode(false)}>
                                 <FiX /> Cancel
                             </button>
                         </>
                     ) : (
-                        <button className="btn btn-primary" onClick={() => setEditMode(true)}>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => setEditMode(true)}
+                            disabled={students.length === 0}
+                        >
                             <FiEdit2 /> Edit Marks
                         </button>
                     )}
@@ -104,29 +213,57 @@ const TeacherMarks = () => {
             <div className="section-card" style={{ marginBottom: 'var(--spacing-6)' }}>
                 <div style={{ padding: 'var(--spacing-6)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
                     <div className="form-group">
-                        <label className="form-label">Class</label>
-                        <select className="form-select" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+                        <label className="form-label">Class *</label>
+                        <select
+                            className="form-select"
+                            value={selectedClass}
+                            onChange={(e) => setSelectedClass(e.target.value)}
+                        >
                             <option value="">Select Class</option>
-                            <option value="CE-5-A">Computer Engineering - Sem 5 - A</option>
-                            <option value="CE-5-B">Computer Engineering - Sem 5 - B</option>
+                            {classOptions.length > 0 ? (
+                                classOptions.map((cls, idx) => (
+                                    <option key={idx} value={cls}>{cls.replace(/-/g, ' - Sem ')}</option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="Computer Engineering-5-A">Computer Engineering - Sem 5 - A</option>
+                                    <option value="Computer Engineering-5-B">Computer Engineering - Sem 5 - B</option>
+                                    <option value="Computer Engineering-3-A">Computer Engineering - Sem 3 - A</option>
+                                    <option value="Mechanical Engineering-5-A">Mechanical Engineering - Sem 5 - A</option>
+                                </>
+                            )}
                         </select>
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Subject</label>
-                        <select className="form-select" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
+                        <label className="form-label">Subject *</label>
+                        <select
+                            className="form-select"
+                            value={selectedSubject}
+                            onChange={(e) => setSelectedSubject(e.target.value)}
+                        >
                             <option value="">Select Subject</option>
-                            <option value="CS301">CS301 - DBMS</option>
-                            <option value="CS302">CS302 - Operating Systems</option>
-                            <option value="CS303">CS303 - Computer Networks</option>
+                            {subjects.filter(s => {
+                                if (!selectedClass) return true;
+                                const [dept, sem] = selectedClass.split('-');
+                                return s.department === dept && s.semester === parseInt(sem);
+                            }).map(subject => (
+                                <option key={subject._id} value={subject._id}>
+                                    {subject.code} - {subject.name}
+                                </option>
+                            ))}
                         </select>
                     </div>
                     <div className="form-group">
                         <label className="form-label">Exam Type</label>
-                        <select className="form-select" value={selectedExam} onChange={(e) => setSelectedExam(e.target.value)}>
-                            <option value="Internal 1">Internal 1</option>
-                            <option value="Internal 2">Internal 2</option>
-                            <option value="Mid Term">Mid Term</option>
-                            <option value="End Term">End Term</option>
+                        <select
+                            className="form-select"
+                            value={selectedExam}
+                            onChange={(e) => setSelectedExam(e.target.value)}
+                        >
+                            <option value="Internal 1">Internal 1 (Max: 40)</option>
+                            <option value="Internal 2">Internal 2 (Max: 40)</option>
+                            <option value="Mid Term">Mid Term (Max: 50)</option>
+                            <option value="End Term">End Term (Max: 100)</option>
                         </select>
                     </div>
                 </div>
@@ -136,87 +273,104 @@ const TeacherMarks = () => {
             <div className="section-card">
                 <div className="section-header">
                     <h2>Student Marks - {selectedExam}</h2>
-                    <span className="badge badge-info">Max Marks: 40</span>
+                    <span className="badge badge-info">Max Marks: {maxMarks}</span>
                 </div>
                 <div className="table-container">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Roll No</th>
-                                <th>Name</th>
-                                <th>Marks Obtained</th>
-                                <th>Percentage</th>
-                                <th>Grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {students.map((student) => {
-                                const marks = marksData[student._id] || { obtained: 0, max: 40 };
-                                const percentage = ((marks.obtained / marks.max) * 100).toFixed(1);
-                                const gradeInfo = calculateGrade(marks.obtained, marks.max);
-                                return (
-                                    <tr key={student._id}>
-                                        <td><strong>{student.rollNumber}</strong></td>
-                                        <td>{student.name}</td>
-                                        <td>
-                                            {editMode ? (
-                                                <input
-                                                    type="number"
-                                                    className="form-input"
-                                                    style={{ width: 80 }}
-                                                    value={marks.obtained}
-                                                    min={0}
-                                                    max={marks.max}
-                                                    onChange={(e) => handleMarksChange(student._id, e.target.value)}
-                                                />
-                                            ) : (
-                                                <span>{marks.obtained} / {marks.max}</span>
-                                            )}
-                                        </td>
-                                        <td>{percentage}%</td>
-                                        <td>
-                                            <span className="badge" style={{ background: gradeInfo.color, color: 'white' }}>
-                                                {gradeInfo.grade}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                    {loading ? (
+                        <div className="page-loading" style={{ padding: 'var(--spacing-8)' }}>
+                            <div className="spinner"></div>
+                            <p>Loading students...</p>
+                        </div>
+                    ) : students.length > 0 ? (
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Roll No</th>
+                                    <th>Name</th>
+                                    <th>Marks Obtained</th>
+                                    <th>Percentage</th>
+                                    <th>Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {students.map((student) => {
+                                    const marks = marksData[student._id] || { obtained: 0, max: maxMarks };
+                                    const percentage = marks.max > 0 ? ((marks.obtained / marks.max) * 100).toFixed(1) : '0.0';
+                                    const gradeInfo = calculateGrade(marks.obtained, marks.max);
+                                    return (
+                                        <tr key={student._id}>
+                                            <td><strong>{student.rollNumber}</strong></td>
+                                            <td>{student.user?.firstName} {student.user?.lastName}</td>
+                                            <td>
+                                                {editMode ? (
+                                                    <input
+                                                        type="number"
+                                                        className="form-input"
+                                                        style={{ width: 80 }}
+                                                        value={marks.obtained}
+                                                        min={0}
+                                                        max={marks.max}
+                                                        onChange={(e) => handleMarksChange(student._id, e.target.value)}
+                                                    />
+                                                ) : (
+                                                    <span>{marks.obtained} / {marks.max}</span>
+                                                )}
+                                            </td>
+                                            <td>{percentage}%</td>
+                                            <td>
+                                                <span className="badge" style={{ background: gradeInfo.color, color: 'white' }}>
+                                                    {gradeInfo.grade}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="empty-state" style={{ padding: 'var(--spacing-12)' }}>
+                            <FiUsers size={48} />
+                            <h3>No Students Found</h3>
+                            <p>{selectedClass && selectedSubject
+                                ? 'No students enrolled in this class.'
+                                : 'Please select a class and subject to load students.'}</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Statistics */}
-            <div className="summary-grid" style={{ marginTop: 'var(--spacing-6)' }}>
-                <div className="summary-card">
-                    <div className="summary-icon total">
-                        <FiEdit2 />
+            {students.length > 0 && (
+                <div className="summary-grid" style={{ marginTop: 'var(--spacing-6)' }}>
+                    <div className="summary-card">
+                        <div className="summary-icon total">
+                            <FiUsers />
+                        </div>
+                        <div className="summary-content">
+                            <h3>{students.length}</h3>
+                            <p>Total Students</p>
+                        </div>
                     </div>
-                    <div className="summary-content">
-                        <h3>{students.length}</h3>
-                        <p>Total Students</p>
+                    <div className="summary-card">
+                        <div className="summary-icon present">
+                            <FiCheck />
+                        </div>
+                        <div className="summary-content">
+                            <h3>{students.filter(s => (marksData[s._id]?.obtained || 0) >= (maxMarks * 0.4)).length}</h3>
+                            <p>Passed (≥40%)</p>
+                        </div>
+                    </div>
+                    <div className="summary-card">
+                        <div className="summary-icon absent">
+                            <FiX />
+                        </div>
+                        <div className="summary-content">
+                            <h3>{students.filter(s => (marksData[s._id]?.obtained || 0) < (maxMarks * 0.4)).length}</h3>
+                            <p>Failed (&lt;40%)</p>
+                        </div>
                     </div>
                 </div>
-                <div className="summary-card">
-                    <div className="summary-icon present">
-                        <FiCheck />
-                    </div>
-                    <div className="summary-content">
-                        <h3>{students.filter(s => marksData[s._id]?.obtained >= 16).length}</h3>
-                        <p>Passed</p>
-                    </div>
-                </div>
-                <div className="summary-card">
-                    <div className="summary-icon absent">
-                        <FiX />
-                    </div>
-                    <div className="summary-content">
-                        <h3>{students.filter(s => marksData[s._id]?.obtained < 16).length}</h3>
-                        <p>Failed</p>
-                    </div>
-                </div>
-            </div>
+            )}
         </div>
     );
 };

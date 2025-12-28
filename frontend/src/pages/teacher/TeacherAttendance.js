@@ -1,40 +1,100 @@
 import React, { useState, useEffect } from 'react';
-import { FiCheck, FiX, FiSave, FiCalendar } from 'react-icons/fi';
+import { FiCheck, FiX, FiSave, FiCalendar, FiUsers } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext';
-import { attendanceService } from '../../services/api';
+import api from '../../services/api';
 import '../student/StudentPages.css';
 
 const TeacherAttendance = () => {
-    const { profile } = useAuth();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [students, setStudents] = useState([]);
+    const [subjects, setSubjects] = useState([]);
     const [selectedClass, setSelectedClass] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('');
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [attendanceData, setAttendanceData] = useState({});
 
     useEffect(() => {
-        loadDemoData();
+        fetchSubjects();
     }, []);
 
-    const loadDemoData = () => {
-        // Demo students for attendance marking
-        setStudents([
-            { _id: '1', rollNumber: 'CE2024001', name: 'Rahul Kumar', department: 'Computer Engineering', semester: 5 },
-            { _id: '2', rollNumber: 'CE2024002', name: 'Priya Singh', department: 'Computer Engineering', semester: 5 },
-            { _id: '3', rollNumber: 'CE2024003', name: 'Amit Jadhav', department: 'Computer Engineering', semester: 5 },
-            { _id: '4', rollNumber: 'CE2024004', name: 'Sneha Patil', department: 'Computer Engineering', semester: 5 },
-            { _id: '5', rollNumber: 'CE2024005', name: 'Vikram Sharma', department: 'Computer Engineering', semester: 5 },
-        ]);
+    useEffect(() => {
+        if (selectedClass && selectedSubject) {
+            fetchStudents();
+        }
+    }, [selectedClass, selectedSubject]);
 
-        // Initialize all as present by default
-        const initialAttendance = {};
-        ['1', '2', '3', '4', '5'].forEach(id => {
-            initialAttendance[id] = 'Present';
-        });
-        setAttendanceData(initialAttendance);
+    const fetchSubjects = async () => {
+        try {
+            const res = await api.get('/subjects');
+            setSubjects(res.data.data || []);
+        } catch (error) {
+            console.error('Error fetching subjects:', error);
+            toast.error('Failed to load subjects');
+        }
+    };
+
+    const fetchStudents = async () => {
+        setLoading(true);
+        try {
+            // Parse selected class (e.g., "Computer Engineering-5-A")
+            const [department, semester, section] = selectedClass.split('-');
+
+            const res = await api.get('/students', {
+                params: {
+                    department: department.trim(),
+                    semester: parseInt(semester),
+                    section: section?.trim() || 'A'
+                }
+            });
+
+            const studentList = res.data.data || [];
+            setStudents(studentList);
+
+            // Initialize all as present by default
+            const initialAttendance = {};
+            studentList.forEach(student => {
+                initialAttendance[student._id] = 'Present';
+            });
+            setAttendanceData(initialAttendance);
+
+            // Check if attendance already marked for this date
+            if (studentList.length > 0) {
+                await checkExistingAttendance();
+            }
+        } catch (error) {
+            console.error('Error fetching students:', error);
+            toast.error('Failed to load students');
+            setStudents([]);
+        }
         setLoading(false);
+    };
+
+    const checkExistingAttendance = async () => {
+        try {
+            const [department, semester, section] = selectedClass.split('-');
+            const res = await api.get('/attendance/class', {
+                params: {
+                    department: department.trim(),
+                    semester: parseInt(semester),
+                    section: section?.trim(),
+                    subjectId: selectedSubject,
+                    date: selectedDate
+                }
+            });
+
+            if (res.data.data && res.data.data.length > 0) {
+                // Load existing attendance
+                const existing = {};
+                res.data.data.forEach(record => {
+                    existing[record.student._id] = record.status;
+                });
+                setAttendanceData(prev => ({ ...prev, ...existing }));
+                toast.info('Existing attendance loaded for this date');
+            }
+        } catch (error) {
+            console.error('Error checking existing attendance:', error);
+        }
     };
 
     const toggleAttendance = (studentId) => {
@@ -59,25 +119,44 @@ const TeacherAttendance = () => {
     };
 
     const handleSubmit = async () => {
+        if (!selectedClass || !selectedSubject) {
+            toast.error('Please select class and subject');
+            return;
+        }
+
+        if (students.length === 0) {
+            toast.error('No students to mark attendance');
+            return;
+        }
+
+        setSubmitting(true);
         try {
-            // In real implementation, this would call the API
+            const attendanceList = students.map(student => ({
+                studentId: student._id,
+                status: attendanceData[student._id] || 'Present',
+                remarks: ''
+            }));
+
+            await api.post('/attendance/mark', {
+                subjectId: selectedSubject,
+                date: selectedDate,
+                attendanceData: attendanceList,
+                lectureNumber: 1
+            });
+
             toast.success('Attendance submitted successfully!');
         } catch (error) {
-            toast.error('Failed to submit attendance');
+            console.error('Error submitting attendance:', error);
+            toast.error(error.response?.data?.message || 'Failed to submit attendance');
         }
+        setSubmitting(false);
     };
 
     const presentCount = Object.values(attendanceData).filter(s => s === 'Present').length;
     const absentCount = Object.values(attendanceData).filter(s => s === 'Absent').length;
 
-    if (loading) {
-        return (
-            <div className="page-loading">
-                <div className="spinner"></div>
-                <p>Loading students...</p>
-            </div>
-        );
-    }
+    // Generate class options from subjects
+    const classOptions = [...new Set(subjects.map(s => `${s.department}-${s.semester}-A`))];
 
     return (
         <div className="student-page animate-fade-in">
@@ -86,8 +165,12 @@ const TeacherAttendance = () => {
                     <h1>Mark Attendance</h1>
                     <p>Mark daily attendance for your classes</p>
                 </div>
-                <button className="btn btn-primary" onClick={handleSubmit}>
-                    <FiSave /> Submit Attendance
+                <button
+                    className="btn btn-primary"
+                    onClick={handleSubmit}
+                    disabled={submitting || students.length === 0}
+                >
+                    <FiSave /> {submitting ? 'Saving...' : 'Submit Attendance'}
                 </button>
             </div>
 
@@ -104,20 +187,44 @@ const TeacherAttendance = () => {
                         />
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Class</label>
-                        <select className="form-select" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+                        <label className="form-label">Class *</label>
+                        <select
+                            className="form-select"
+                            value={selectedClass}
+                            onChange={(e) => setSelectedClass(e.target.value)}
+                        >
                             <option value="">Select Class</option>
-                            <option value="CE-5-A">Computer Engineering - Sem 5 - A</option>
-                            <option value="CE-5-B">Computer Engineering - Sem 5 - B</option>
+                            {classOptions.length > 0 ? (
+                                classOptions.map((cls, idx) => (
+                                    <option key={idx} value={cls}>{cls.replace(/-/g, ' - Sem ')}</option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="Computer Engineering-5-A">Computer Engineering - Sem 5 - A</option>
+                                    <option value="Computer Engineering-5-B">Computer Engineering - Sem 5 - B</option>
+                                    <option value="Computer Engineering-3-A">Computer Engineering - Sem 3 - A</option>
+                                    <option value="Mechanical Engineering-5-A">Mechanical Engineering - Sem 5 - A</option>
+                                </>
+                            )}
                         </select>
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Subject</label>
-                        <select className="form-select" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
+                        <label className="form-label">Subject *</label>
+                        <select
+                            className="form-select"
+                            value={selectedSubject}
+                            onChange={(e) => setSelectedSubject(e.target.value)}
+                        >
                             <option value="">Select Subject</option>
-                            <option value="CS301">CS301 - DBMS</option>
-                            <option value="CS302">CS302 - Operating Systems</option>
-                            <option value="CS303">CS303 - Computer Networks</option>
+                            {subjects.filter(s => {
+                                if (!selectedClass) return true;
+                                const [dept, sem] = selectedClass.split('-');
+                                return s.department === dept && s.semester === parseInt(sem);
+                            }).map(subject => (
+                                <option key={subject._id} value={subject._id}>
+                                    {subject.code} - {subject.name}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -127,7 +234,7 @@ const TeacherAttendance = () => {
             <div className="summary-grid" style={{ marginBottom: 'var(--spacing-6)' }}>
                 <div className="summary-card">
                     <div className="summary-icon total">
-                        <FiCalendar />
+                        <FiUsers />
                     </div>
                     <div className="summary-content">
                         <h3>{students.length}</h3>
@@ -155,14 +262,16 @@ const TeacherAttendance = () => {
             </div>
 
             {/* Quick Actions */}
-            <div style={{ marginBottom: 'var(--spacing-4)', display: 'flex', gap: 'var(--spacing-3)' }}>
-                <button className="btn btn-secondary btn-sm" onClick={markAllPresent}>
-                    <FiCheck /> Mark All Present
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={markAllAbsent}>
-                    <FiX /> Mark All Absent
-                </button>
-            </div>
+            {students.length > 0 && (
+                <div style={{ marginBottom: 'var(--spacing-4)', display: 'flex', gap: 'var(--spacing-3)' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={markAllPresent}>
+                        <FiCheck /> Mark All Present
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={markAllAbsent}>
+                        <FiX /> Mark All Absent
+                    </button>
+                </div>
+            )}
 
             {/* Attendance List */}
             <div className="section-card">
@@ -170,41 +279,56 @@ const TeacherAttendance = () => {
                     <h2>Student List</h2>
                 </div>
                 <div className="table-container">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Roll No</th>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {students.map((student) => (
-                                <tr key={student._id}>
-                                    <td><strong>{student.rollNumber}</strong></td>
-                                    <td>{student.name}</td>
-                                    <td>
-                                        <span className={`badge ${attendanceData[student._id] === 'Present' ? 'badge-success' : 'badge-error'}`}>
-                                            {attendanceData[student._id]}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <button
-                                            className={`btn btn-sm ${attendanceData[student._id] === 'Present' ? 'btn-secondary' : 'btn-primary'}`}
-                                            onClick={() => toggleAttendance(student._id)}
-                                        >
-                                            {attendanceData[student._id] === 'Present' ? (
-                                                <><FiX /> Mark Absent</>
-                                            ) : (
-                                                <><FiCheck /> Mark Present</>
-                                            )}
-                                        </button>
-                                    </td>
+                    {loading ? (
+                        <div className="page-loading" style={{ padding: 'var(--spacing-8)' }}>
+                            <div className="spinner"></div>
+                            <p>Loading students...</p>
+                        </div>
+                    ) : students.length > 0 ? (
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Roll No</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {students.map((student) => (
+                                    <tr key={student._id}>
+                                        <td><strong>{student.rollNumber}</strong></td>
+                                        <td>{student.user?.firstName} {student.user?.lastName}</td>
+                                        <td>
+                                            <span className={`badge ${attendanceData[student._id] === 'Present' ? 'badge-success' : 'badge-error'}`}>
+                                                {attendanceData[student._id]}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button
+                                                className={`btn btn-sm ${attendanceData[student._id] === 'Present' ? 'btn-secondary' : 'btn-primary'}`}
+                                                onClick={() => toggleAttendance(student._id)}
+                                            >
+                                                {attendanceData[student._id] === 'Present' ? (
+                                                    <><FiX /> Mark Absent</>
+                                                ) : (
+                                                    <><FiCheck /> Mark Present</>
+                                                )}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="empty-state" style={{ padding: 'var(--spacing-12)' }}>
+                            <FiCalendar size={48} />
+                            <h3>No Students Found</h3>
+                            <p>{selectedClass && selectedSubject
+                                ? 'No students enrolled in this class.'
+                                : 'Please select a class and subject to load students.'}</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -20,6 +20,7 @@ const leaveRoutes = require('./routes/leaveRoutes');
 const galleryRoutes = require('./routes/galleryRoutes');
 const parentRoutes = require('./routes/parentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const subjectRoutes = require('./routes/subjectRoutes');
 
 // Initialize Express app
 const app = express();
@@ -63,6 +64,7 @@ app.use('/api/leave', leaveRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/parents', parentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/subjects', subjectRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

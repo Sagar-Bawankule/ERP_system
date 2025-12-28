@@ -1,35 +1,100 @@
 import React, { useState, useEffect } from 'react';
-import { FiUser, FiSearch, FiMail, FiPhone, FiCalendar, FiEye } from 'react-icons/fi';
-import { useAuth } from '../../context/AuthContext';
+import { FiUser, FiSearch, FiMail, FiPhone, FiCalendar, FiEye, FiUsers } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
 
 const TeacherStudents = () => {
-    const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
     const [students, setStudents] = useState([]);
+    const [subjects, setSubjects] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedClass, setSelectedClass] = useState('');
     const [selectedStudent, setSelectedStudent] = useState(null);
 
     useEffect(() => {
-        loadDemoData();
+        fetchSubjects();
     }, []);
 
-    const loadDemoData = () => {
-        setStudents([
-            { _id: '1', rollNumber: 'CE2024001', name: 'Rahul Kumar', email: 'rahul@example.com', phone: '9876543210', department: 'Computer Engineering', semester: 5, section: 'A', attendance: 85, cgpa: 8.2 },
-            { _id: '2', rollNumber: 'CE2024002', name: 'Priya Singh', email: 'priya@example.com', phone: '9876543211', department: 'Computer Engineering', semester: 5, section: 'A', attendance: 92, cgpa: 9.1 },
-            { _id: '3', rollNumber: 'CE2024003', name: 'Amit Jadhav', email: 'amit@example.com', phone: '9876543212', department: 'Computer Engineering', semester: 5, section: 'A', attendance: 78, cgpa: 7.5 },
-            { _id: '4', rollNumber: 'CE2024004', name: 'Sneha Patil', email: 'sneha@example.com', phone: '9876543213', department: 'Computer Engineering', semester: 5, section: 'A', attendance: 88, cgpa: 8.8 },
-            { _id: '5', rollNumber: 'CE2024005', name: 'Vikram Sharma', email: 'vikram@example.com', phone: '9876543214', department: 'Computer Engineering', semester: 5, section: 'A', attendance: 95, cgpa: 9.4 },
-        ]);
+    useEffect(() => {
+        if (selectedClass) {
+            fetchStudents();
+        } else {
+            fetchAllStudents();
+        }
+    }, [selectedClass]);
+
+    const fetchSubjects = async () => {
+        try {
+            const res = await api.get('/subjects');
+            setSubjects(res.data.data || []);
+        } catch (error) {
+            console.error('Error fetching subjects:', error);
+        }
+    };
+
+    const fetchAllStudents = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get('/students');
+            const studentList = res.data.data || [];
+            setStudents(studentList.map(s => ({
+                _id: s._id,
+                rollNumber: s.rollNumber,
+                name: `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.trim() || 'Unknown',
+                email: s.user?.email || '-',
+                phone: s.user?.phone || '-',
+                department: s.department,
+                semester: s.semester,
+                section: s.section || 'A',
+                attendance: 0, // Will be calculated if needed
+                cgpa: 0 // Will be calculated if needed
+            })));
+        } catch (error) {
+            console.error('Error fetching students:', error);
+            toast.error('Failed to load students');
+            setStudents([]);
+        }
+        setLoading(false);
+    };
+
+    const fetchStudents = async () => {
+        setLoading(true);
+        try {
+            const [department, semester, section] = selectedClass.split('-');
+            const res = await api.get('/students', {
+                params: {
+                    department: department.trim(),
+                    semester: parseInt(semester),
+                    section: section?.trim() || 'A'
+                }
+            });
+
+            const studentList = res.data.data || [];
+            setStudents(studentList.map(s => ({
+                _id: s._id,
+                rollNumber: s.rollNumber,
+                name: `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.trim() || 'Unknown',
+                email: s.user?.email || '-',
+                phone: s.user?.phone || '-',
+                department: s.department,
+                semester: s.semester,
+                section: s.section || 'A',
+                attendance: 0,
+                cgpa: 0
+            })));
+        } catch (error) {
+            console.error('Error fetching students:', error);
+            toast.error('Failed to load students');
+            setStudents([]);
+        }
         setLoading(false);
     };
 
     const filteredStudents = students.filter(student =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase())
+        student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const getAttendanceClass = (attendance) => {
@@ -37,6 +102,9 @@ const TeacherStudents = () => {
         if (attendance >= 75) return 'badge-warning';
         return 'badge-error';
     };
+
+    // Generate class options
+    const classOptions = [...new Set(subjects.map(s => `${s.department}-${s.semester}-A`))];
 
     if (loading) {
         return (
@@ -66,7 +134,7 @@ const TeacherStudents = () => {
                             <input
                                 type="text"
                                 className="form-input"
-                                placeholder="Search by name or roll number..."
+                                placeholder="Search by name, roll number, or email..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 style={{ paddingLeft: 40 }}
@@ -75,10 +143,23 @@ const TeacherStudents = () => {
                     </div>
                     <div className="form-group">
                         <label className="form-label">Class</label>
-                        <select className="form-select" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+                        <select
+                            className="form-select"
+                            value={selectedClass}
+                            onChange={(e) => setSelectedClass(e.target.value)}
+                        >
                             <option value="">All Classes</option>
-                            <option value="CE-5-A">Computer Engineering - Sem 5 - A</option>
-                            <option value="CE-5-B">Computer Engineering - Sem 5 - B</option>
+                            {classOptions.length > 0 ? (
+                                classOptions.map((cls, idx) => (
+                                    <option key={idx} value={cls}>{cls.replace(/-/g, ' - Sem ')}</option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="Computer Engineering-5-A">Computer Engineering - Sem 5 - A</option>
+                                    <option value="Computer Engineering-5-B">Computer Engineering - Sem 5 - B</option>
+                                    <option value="Computer Engineering-3-A">Computer Engineering - Sem 3 - A</option>
+                                </>
+                            )}
                         </select>
                     </div>
                 </div>
@@ -88,29 +169,11 @@ const TeacherStudents = () => {
             <div className="summary-grid" style={{ marginBottom: 'var(--spacing-6)' }}>
                 <div className="summary-card">
                     <div className="summary-icon total">
-                        <FiUser />
+                        <FiUsers />
                     </div>
                     <div className="summary-content">
                         <h3>{filteredStudents.length}</h3>
                         <p>Total Students</p>
-                    </div>
-                </div>
-                <div className="summary-card">
-                    <div className="summary-icon present">
-                        <FiCalendar />
-                    </div>
-                    <div className="summary-content">
-                        <h3>{(filteredStudents.reduce((acc, s) => acc + s.attendance, 0) / filteredStudents.length).toFixed(1)}%</h3>
-                        <p>Avg Attendance</p>
-                    </div>
-                </div>
-                <div className="summary-card">
-                    <div className="summary-icon percentage">
-                        <FiUser />
-                    </div>
-                    <div className="summary-content">
-                        <h3>{(filteredStudents.reduce((acc, s) => acc + s.cgpa, 0) / filteredStudents.length).toFixed(2)}</h3>
-                        <p>Avg CGPA</p>
                     </div>
                 </div>
             </div>
@@ -121,55 +184,55 @@ const TeacherStudents = () => {
                     <h2><FiUser style={{ marginRight: 8 }} /> Student List</h2>
                 </div>
                 <div className="table-container">
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Roll No</th>
-                                <th>Name</th>
-                                <th>Contact</th>
-                                <th>Attendance</th>
-                                <th>CGPA</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredStudents.map((student) => (
-                                <tr key={student._id}>
-                                    <td><strong>{student.rollNumber}</strong></td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-                                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 600 }}>
-                                                {student.name.charAt(0)}
-                                            </div>
-                                            {student.name}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style={{ fontSize: '0.875rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><FiMail size={12} /> {student.email}</div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}><FiPhone size={12} /> {student.phone}</div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className={`badge ${getAttendanceClass(student.attendance)}`}>
-                                            {student.attendance}%
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <strong>{student.cgpa}</strong>
-                                    </td>
-                                    <td>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={() => setSelectedStudent(student)}
-                                        >
-                                            <FiEye /> View
-                                        </button>
-                                    </td>
+                    {filteredStudents.length > 0 ? (
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Roll No</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Semester</th>
+                                    <th>Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredStudents.map((student) => (
+                                    <tr key={student._id}>
+                                        <td><strong>{student.rollNumber}</strong></td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                                                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 600 }}>
+                                                    {student.name.charAt(0)}
+                                                </div>
+                                                {student.name}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontSize: '0.875rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><FiMail size={12} /> {student.email}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)' }}><FiPhone size={12} /> {student.phone}</div>
+                                            </div>
+                                        </td>
+                                        <td>Sem {student.semester} - {student.section}</td>
+                                        <td>
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={() => setSelectedStudent(student)}
+                                            >
+                                                <FiEye /> View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="empty-state" style={{ padding: 'var(--spacing-12)' }}>
+                            <FiUsers size={48} />
+                            <h3>No Students Found</h3>
+                            <p>{selectedClass ? 'No students enrolled in this class.' : 'No students available.'}</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -205,16 +268,6 @@ const TeacherStudents = () => {
                                 <div>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Semester</p>
                                     <p>{selectedStudent.semester} - Section {selectedStudent.section}</p>
-                                </div>
-                                <div>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Attendance</p>
-                                    <span className={`badge ${getAttendanceClass(selectedStudent.attendance)}`}>
-                                        {selectedStudent.attendance}%
-                                    </span>
-                                </div>
-                                <div>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>CGPA</p>
-                                    <p><strong>{selectedStudent.cgpa}</strong></p>
                                 </div>
                             </div>
                         </div>
