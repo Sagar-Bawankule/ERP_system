@@ -21,6 +21,8 @@ const galleryRoutes = require('./routes/galleryRoutes');
 const parentRoutes = require('./routes/parentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
+const classRoutes = require('./routes/classRoutes');
+const teachingAssignmentRoutes = require('./routes/teachingAssignmentRoutes');
 
 // Initialize Express app
 const app = express();
@@ -65,6 +67,8 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/parents', parentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/api/classes', classRoutes);
+app.use('/api/teaching-assignments', teachingAssignmentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

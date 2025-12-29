@@ -56,6 +56,8 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/teachers`, icon: FiUsers, label: 'Teachers' },
             { path: `${baseRoute}/parents`, icon: FiUsers, label: 'Parents' },
             { path: `${baseRoute}/subjects`, icon: FiBook, label: 'Subjects' },
+            { path: `${baseRoute}/classes`, icon: FiCalendar, label: 'Classes' },
+            { path: `${baseRoute}/teaching-assignments`, icon: FiBook, label: 'Teaching Assignments' },
             { path: `${baseRoute}/fees`, icon: FiDollarSign, label: 'Fees' },
             { path: `${baseRoute}/scholarships`, icon: FiAward, label: 'Scholarships' },
             { path: `${baseRoute}/leaves`, icon: FiCalendar, label: 'Leave Applications' },

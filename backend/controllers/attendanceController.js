@@ -1,24 +1,31 @@
 const Attendance = require('../models/Attendance');
 const Student = require('../models/Student');
 const Subject = require('../models/Subject');
+const TeachingAssignment = require('../models/TeachingAssignment');
+const Class = require('../models/Class');
 const Notification = require('../models/Notification');
 const { asyncHandler } = require('../middleware/errorHandler');
 
-// @desc    Mark attendance for a class
+// @desc    Mark attendance using Teaching Assignment
 // @route   POST /api/attendance/mark
 // @access  Private (Teacher)
 const markAttendance = asyncHandler(async (req, res) => {
-    const { subjectId, date, attendanceData, lectureNumber = 1 } = req.body;
+    const { assignmentId, date, attendanceData, lectureNumber = 1 } = req.body;
     // attendanceData: [{ studentId, status, remarks }]
 
-    const subject = await Subject.findById(subjectId);
-    if (!subject) {
+    // Validate teaching assignment
+    const assignment = await TeachingAssignment.findById(assignmentId)
+        .populate('subjectId')
+        .populate('classId');
+
+    if (!assignment) {
         return res.status(404).json({
             success: false,
-            message: 'Subject not found',
+            message: 'Teaching assignment not found',
         });
     }
 
+    // Verify teacher owns this assignment
     const teacher = await require('../models/Teacher').findOne({ user: req.user.id });
     if (!teacher) {
         return res.status(404).json({
@@ -27,6 +34,16 @@ const markAttendance = asyncHandler(async (req, res) => {
         });
     }
 
+    if (assignment.teacherId.toString() !== teacher._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to mark attendance for this class',
+        });
+    }
+
+    const classInfo = assignment.classId;
+    const subjectInfo = assignment.subjectId;
+
     const attendanceRecords = [];
     const notifications = [];
 
@@ -34,25 +51,35 @@ const markAttendance = asyncHandler(async (req, res) => {
         const student = await Student.findById(record.studentId);
         if (!student) continue;
 
+        // Verify student belongs to the same class as the assignment
+        if (
+            student.department !== classInfo.department ||
+            student.semester !== classInfo.semester ||
+            student.section !== classInfo.section
+        ) {
+            continue; // Skip students not in this class
+        }
+
         // Upsert attendance record
         const attendance = await Attendance.findOneAndUpdate(
             {
                 student: record.studentId,
-                subject: subjectId,
+                subject: subjectInfo._id,
                 date: new Date(date),
                 lectureNumber,
             },
             {
                 student: record.studentId,
-                subject: subjectId,
+                subject: subjectInfo._id,
                 teacher: teacher._id,
+                teachingAssignment: assignment._id,
                 date: new Date(date),
                 status: record.status,
                 lectureNumber,
                 remarks: record.remarks,
-                semester: student.semester,
-                department: student.department,
-                section: student.section,
+                semester: classInfo.semester,
+                department: classInfo.department,
+                section: classInfo.section,
             },
             { upsert: true, new: true }
         );
@@ -67,7 +94,7 @@ const markAttendance = asyncHandler(async (req, res) => {
                     recipient: studentUser._id,
                     recipientRole: 'student',
                     title: 'Attendance Marked Absent',
-                    message: `You were marked absent for ${subject.name} on ${new Date(date).toLocaleDateString()}`,
+                    message: `You were marked absent for ${subjectInfo.name} on ${new Date(date).toLocaleDateString()}`,
                     type: 'attendance',
                 });
             }
@@ -80,7 +107,7 @@ const markAttendance = asyncHandler(async (req, res) => {
                         recipient: parent.user,
                         recipientRole: 'parent',
                         title: 'Student Marked Absent',
-                        message: `Your ward was marked absent for ${subject.name} on ${new Date(date).toLocaleDateString()}`,
+                        message: `Your ward was marked absent for ${subjectInfo.name} on ${new Date(date).toLocaleDateString()}`,
                         type: 'attendance',
                     });
                 }

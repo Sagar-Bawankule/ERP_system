@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiCheck, FiX, FiSave, FiCalendar, FiUsers } from 'react-icons/fi';
+import { FiCheck, FiX, FiSave, FiCalendar, FiUsers, FiBook } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
@@ -7,47 +7,44 @@ import '../student/StudentPages.css';
 const TeacherAttendance = () => {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [assignments, setAssignments] = useState([]);
     const [students, setStudents] = useState([]);
-    const [subjects, setSubjects] = useState([]);
-    const [selectedClass, setSelectedClass] = useState('');
-    const [selectedSubject, setSelectedSubject] = useState('');
+    const [selectedAssignment, setSelectedAssignment] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [attendanceData, setAttendanceData] = useState({});
+    const [loadingAssignments, setLoadingAssignments] = useState(true);
 
+    // Fetch teacher's teaching assignments on mount
     useEffect(() => {
-        fetchSubjects();
+        fetchMyAssignments();
     }, []);
 
+    // Fetch students when assignment is selected
     useEffect(() => {
-        if (selectedClass && selectedSubject) {
-            fetchStudents();
+        if (selectedAssignment) {
+            fetchStudentsForAssignment(selectedAssignment._id);
+        } else {
+            setStudents([]);
+            setAttendanceData({});
         }
-    }, [selectedClass, selectedSubject]);
+    }, [selectedAssignment]);
 
-    const fetchSubjects = async () => {
+    const fetchMyAssignments = async () => {
+        setLoadingAssignments(true);
         try {
-            const res = await api.get('/subjects');
-            setSubjects(res.data.data || []);
+            const res = await api.get('/teaching-assignments/my-assignments');
+            setAssignments(res.data.data || []);
         } catch (error) {
-            console.error('Error fetching subjects:', error);
-            toast.error('Failed to load subjects');
+            console.error('Error fetching assignments:', error);
+            toast.error('Failed to load your teaching assignments');
         }
+        setLoadingAssignments(false);
     };
 
-    const fetchStudents = async () => {
+    const fetchStudentsForAssignment = async (assignmentId) => {
         setLoading(true);
         try {
-            // Parse selected class (e.g., "Computer Engineering-5-A")
-            const [department, semester, section] = selectedClass.split('-');
-
-            const res = await api.get('/students', {
-                params: {
-                    department: department.trim(),
-                    semester: parseInt(semester),
-                    section: section?.trim() || 'A'
-                }
-            });
-
+            const res = await api.get(`/teaching-assignments/${assignmentId}/students`);
             const studentList = res.data.data || [];
             setStudents(studentList);
 
@@ -59,8 +56,8 @@ const TeacherAttendance = () => {
             setAttendanceData(initialAttendance);
 
             // Check if attendance already marked for this date
-            if (studentList.length > 0) {
-                await checkExistingAttendance();
+            if (studentList.length > 0 && res.data.assignment) {
+                await checkExistingAttendance(res.data.assignment);
             }
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -70,15 +67,17 @@ const TeacherAttendance = () => {
         setLoading(false);
     };
 
-    const checkExistingAttendance = async () => {
+    const checkExistingAttendance = async (assignmentInfo) => {
         try {
-            const [department, semester, section] = selectedClass.split('-');
+            const classInfo = assignmentInfo.class;
+            if (!classInfo) return;
+
             const res = await api.get('/attendance/class', {
                 params: {
-                    department: department.trim(),
-                    semester: parseInt(semester),
-                    section: section?.trim(),
-                    subjectId: selectedSubject,
+                    department: classInfo.department,
+                    semester: classInfo.semester,
+                    section: classInfo.section,
+                    subjectId: assignmentInfo.subject?._id,
                     date: selectedDate
                 }
             });
@@ -87,7 +86,8 @@ const TeacherAttendance = () => {
                 // Load existing attendance
                 const existing = {};
                 res.data.data.forEach(record => {
-                    existing[record.student._id] = record.status;
+                    const studentId = record.student?._id || record.student;
+                    existing[studentId] = record.status;
                 });
                 setAttendanceData(prev => ({ ...prev, ...existing }));
                 toast.info('Existing attendance loaded for this date');
@@ -119,8 +119,8 @@ const TeacherAttendance = () => {
     };
 
     const handleSubmit = async () => {
-        if (!selectedClass || !selectedSubject) {
-            toast.error('Please select class and subject');
+        if (!selectedAssignment) {
+            toast.error('Please select a teaching assignment');
             return;
         }
 
@@ -138,7 +138,7 @@ const TeacherAttendance = () => {
             }));
 
             await api.post('/attendance/mark', {
-                subjectId: selectedSubject,
+                assignmentId: selectedAssignment._id,
                 date: selectedDate,
                 attendanceData: attendanceList,
                 lectureNumber: 1
@@ -155,15 +155,18 @@ const TeacherAttendance = () => {
     const presentCount = Object.values(attendanceData).filter(s => s === 'Present').length;
     const absentCount = Object.values(attendanceData).filter(s => s === 'Absent').length;
 
-    // Generate class options from subjects
-    const classOptions = [...new Set(subjects.map(s => `${s.department}-${s.semester}-A`))];
+    // Handle assignment selection
+    const handleAssignmentSelect = (assignmentId) => {
+        const assignment = assignments.find(a => a._id === assignmentId);
+        setSelectedAssignment(assignment || null);
+    };
 
     return (
         <div className="student-page animate-fade-in">
             <div className="page-header">
                 <div>
                     <h1>Mark Attendance</h1>
-                    <p>Mark daily attendance for your classes</p>
+                    <p>Mark daily attendance for your assigned classes</p>
                 </div>
                 <button
                     className="btn btn-primary"
@@ -174,11 +177,45 @@ const TeacherAttendance = () => {
                 </button>
             </div>
 
-            {/* Filters */}
+            {/* Teaching Assignment Selection */}
             <div className="section-card" style={{ marginBottom: 'var(--spacing-6)' }}>
-                <div style={{ padding: 'var(--spacing-6)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
+                <div style={{ padding: 'var(--spacing-6)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-4)' }}>
                     <div className="form-group">
-                        <label className="form-label">Date</label>
+                        <label className="form-label">
+                            <FiBook style={{ marginRight: '8px' }} />
+                            Teaching Assignment *
+                        </label>
+                        {loadingAssignments ? (
+                            <div className="form-input" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
+                                Loading assignments...
+                            </div>
+                        ) : (
+                            <select
+                                className="form-select"
+                                value={selectedAssignment?._id || ''}
+                                onChange={(e) => handleAssignmentSelect(e.target.value)}
+                            >
+                                <option value="">Select Teaching Assignment</option>
+                                {assignments.map(assignment => (
+                                    <option key={assignment._id} value={assignment._id}>
+                                        {assignment.subjectId?.code || 'N/A'} - {assignment.subjectId?.name || 'N/A'}
+                                        ({assignment.classId?.department || 'N/A'} - Sem {assignment.classId?.semester || assignment.semester}, Sec {assignment.classId?.section || 'N/A'})
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {assignments.length === 0 && !loadingAssignments && (
+                            <small style={{ color: 'var(--warning-color)', marginTop: '4px', display: 'block' }}>
+                                No teaching assignments found. Please contact admin.
+                            </small>
+                        )}
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">
+                            <FiCalendar style={{ marginRight: '8px' }} />
+                            Date
+                        </label>
                         <input
                             type="date"
                             className="form-input"
@@ -186,48 +223,36 @@ const TeacherAttendance = () => {
                             onChange={(e) => setSelectedDate(e.target.value)}
                         />
                     </div>
-                    <div className="form-group">
-                        <label className="form-label">Class *</label>
-                        <select
-                            className="form-select"
-                            value={selectedClass}
-                            onChange={(e) => setSelectedClass(e.target.value)}
-                        >
-                            <option value="">Select Class</option>
-                            {classOptions.length > 0 ? (
-                                classOptions.map((cls, idx) => (
-                                    <option key={idx} value={cls}>{cls.replace(/-/g, ' - Sem ')}</option>
-                                ))
-                            ) : (
-                                <>
-                                    <option value="Computer Engineering-5-A">Computer Engineering - Sem 5 - A</option>
-                                    <option value="Computer Engineering-5-B">Computer Engineering - Sem 5 - B</option>
-                                    <option value="Computer Engineering-3-A">Computer Engineering - Sem 3 - A</option>
-                                    <option value="Mechanical Engineering-5-A">Mechanical Engineering - Sem 5 - A</option>
-                                </>
-                            )}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label className="form-label">Subject *</label>
-                        <select
-                            className="form-select"
-                            value={selectedSubject}
-                            onChange={(e) => setSelectedSubject(e.target.value)}
-                        >
-                            <option value="">Select Subject</option>
-                            {subjects.filter(s => {
-                                if (!selectedClass) return true;
-                                const [dept, sem] = selectedClass.split('-');
-                                return s.department === dept && s.semester === parseInt(sem);
-                            }).map(subject => (
-                                <option key={subject._id} value={subject._id}>
-                                    {subject.code} - {subject.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
                 </div>
+
+                {/* Auto-resolved class info */}
+                {selectedAssignment && (
+                    <div style={{
+                        padding: 'var(--spacing-4) var(--spacing-6)',
+                        background: 'var(--primary-color-light)',
+                        borderTop: '1px solid var(--border-color)',
+                        display: 'flex',
+                        gap: 'var(--spacing-6)',
+                        flexWrap: 'wrap'
+                    }}>
+                        <div>
+                            <small style={{ color: 'var(--text-secondary)' }}>Department</small>
+                            <p style={{ margin: 0, fontWeight: '600' }}>{selectedAssignment.classId?.department || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <small style={{ color: 'var(--text-secondary)' }}>Semester</small>
+                            <p style={{ margin: 0, fontWeight: '600' }}>{selectedAssignment.classId?.semester || selectedAssignment.semester}</p>
+                        </div>
+                        <div>
+                            <small style={{ color: 'var(--text-secondary)' }}>Section</small>
+                            <p style={{ margin: 0, fontWeight: '600' }}>{selectedAssignment.classId?.section || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <small style={{ color: 'var(--text-secondary)' }}>Subject</small>
+                            <p style={{ margin: 0, fontWeight: '600' }}>{selectedAssignment.subjectId?.name || 'N/A'}</p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Summary */}
@@ -324,9 +349,9 @@ const TeacherAttendance = () => {
                         <div className="empty-state" style={{ padding: 'var(--spacing-12)' }}>
                             <FiCalendar size={48} />
                             <h3>No Students Found</h3>
-                            <p>{selectedClass && selectedSubject
+                            <p>{selectedAssignment
                                 ? 'No students enrolled in this class.'
-                                : 'Please select a class and subject to load students.'}</p>
+                                : 'Please select a teaching assignment to load students.'}</p>
                         </div>
                     )}
                 </div>

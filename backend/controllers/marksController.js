@@ -423,12 +423,12 @@ const getPerformanceAnalytics = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Bulk enter marks for multiple students
+// @desc    Bulk enter marks for multiple students using TeachingAssignment
 // @route   POST /api/marks/bulk
 // @access  Private (Teacher, Admin)
 const bulkEnterMarks = asyncHandler(async (req, res) => {
-    const { marks } = req.body;
-    // marks: [{ studentId, subjectId, examType, marksObtained, maxMarks, semester }]
+    const { assignmentId, examType, marks } = req.body;
+    // marks: [{ studentId, marksObtained }]
 
     if (!marks || !Array.isArray(marks) || marks.length === 0) {
         return res.status(400).json({
@@ -438,8 +438,85 @@ const bulkEnterMarks = asyncHandler(async (req, res) => {
     }
 
     const teacher = await require('../models/Teacher').findOne({ user: req.user.id });
-    const academicYear = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
+    // If assignmentId provided, use TeachingAssignment-based validation
+    if (assignmentId) {
+        const TeachingAssignment = require('../models/TeachingAssignment');
+        const Class = require('../models/Class');
+        const assignment = await TeachingAssignment.findById(assignmentId)
+            .populate('subjectId')
+            .populate('classId');
+
+        if (!assignment) {
+            return res.status(404).json({
+                success: false,
+                message: 'Teaching assignment not found',
+            });
+        }
+
+        // Verify teacher owns this assignment (unless admin)
+        if (req.user.role === 'teacher') {
+            if (!teacher || assignment.teacherId.toString() !== teacher._id.toString()) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'You are not authorized to enter marks for this class',
+                });
+            }
+        }
+
+        const classInfo = assignment.classId;
+        const subjectInfo = assignment.subjectId;
+        const academicYear = assignment.academicYear;
+        const maxMarks = getMaxMarksByExamType(examType, subjectInfo?.maxMarks);
+        const marksRecords = [];
+
+        for (const record of marks) {
+            const student = await Student.findById(record.studentId);
+            if (!student) continue;
+
+            // Verify student belongs to the same class as the assignment
+            if (
+                student.department !== classInfo.department ||
+                student.semester !== classInfo.semester ||
+                student.section !== classInfo.section
+            ) {
+                continue; // Skip students not in this class
+            }
+
+            // Upsert marks
+            const marksDoc = await Marks.findOneAndUpdate(
+                {
+                    student: record.studentId,
+                    subject: subjectInfo._id,
+                    examType,
+                    academicYear,
+                },
+                {
+                    student: record.studentId,
+                    subject: subjectInfo._id,
+                    semester: classInfo.semester,
+                    examType,
+                    academicYear,
+                    maxMarks: record.maxMarks || maxMarks,
+                    obtainedMarks: record.marksObtained,
+                    enteredBy: teacher?._id || req.user.id,
+                    teachingAssignment: assignment._id,
+                },
+                { upsert: true, new: true }
+            );
+
+            marksRecords.push(marksDoc);
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: `Marks saved for ${marksRecords.length} students`,
+            data: marksRecords,
+        });
+    }
+
+    // Legacy flow (for backward compatibility or admin use)
+    const academicYear = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
     const marksRecords = [];
 
     for (const record of marks) {
@@ -451,14 +528,14 @@ const bulkEnterMarks = asyncHandler(async (req, res) => {
             {
                 student: record.studentId,
                 subject: record.subjectId,
-                examType: record.examType,
+                examType: record.examType || examType,
                 academicYear,
             },
             {
                 student: record.studentId,
                 subject: record.subjectId,
                 semester: record.semester || student.semester,
-                examType: record.examType,
+                examType: record.examType || examType,
                 academicYear,
                 maxMarks: record.maxMarks,
                 obtainedMarks: record.marksObtained,
@@ -476,6 +553,26 @@ const bulkEnterMarks = asyncHandler(async (req, res) => {
         data: marksRecords,
     });
 });
+
+// Helper function to get max marks based on exam type
+const getMaxMarksByExamType = (examType, subjectMaxMarks) => {
+    switch (examType) {
+        case 'Internal':
+        case 'Internal 1':
+        case 'Internal 2':
+            return subjectMaxMarks?.internal || 20;
+        case 'Mid-Term':
+        case 'Mid Term':
+            return 50;
+        case 'End-Term':
+        case 'End Term':
+            return subjectMaxMarks?.theory || 80;
+        case 'Practical':
+            return subjectMaxMarks?.practical || 20;
+        default:
+            return 40;
+    }
+};
 
 // @desc    Get marks by filter
 // @route   GET /api/marks

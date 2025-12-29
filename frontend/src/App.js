@@ -55,6 +55,8 @@ import AdminScholarships from './pages/admin/AdminScholarships';
 import AdminGallery from './pages/admin/AdminGallery';
 import AdminReports from './pages/admin/AdminReports';
 import AdminSubjects from './pages/admin/AdminSubjects';
+import AdminClasses from './pages/admin/AdminClasses';
+import AdminTeachingAssignments from './pages/admin/AdminTeachingAssignments';
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -142,6 +144,8 @@ function App() {
                             <Route path="gallery" element={<AdminGallery />} />
                             <Route path="reports" element={<AdminReports />} />
                             <Route path="subjects" element={<AdminSubjects />} />
+                            <Route path="classes" element={<AdminClasses />} />
+                            <Route path="teaching-assignments" element={<AdminTeachingAssignments />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
 

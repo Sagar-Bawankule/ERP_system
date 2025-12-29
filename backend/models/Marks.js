@@ -21,8 +21,12 @@ const marksSchema = new mongoose.Schema({
     },
     examType: {
         type: String,
-        enum: ['Internal', 'Mid-Term', 'End-Term', 'Practical', 'Assignment', 'Backlog'],
+        enum: ['Internal', 'Internal 1', 'Internal 2', 'Mid-Term', 'Mid Term', 'End-Term', 'End Term', 'Practical', 'Assignment', 'Backlog'],
         required: true,
+    },
+    teachingAssignment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TeachingAssignment',
     },
     maxMarks: {
         type: Number,
