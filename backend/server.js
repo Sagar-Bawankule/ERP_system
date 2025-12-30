@@ -70,6 +70,34 @@ app.use('/api/subjects', subjectRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/teaching-assignments', teachingAssignmentRoutes);
 
+// Root endpoint - API information
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'College ERP System API',
+        version: '1.0.0',
+        endpoints: {
+            health: '/api/health',
+            auth: '/api/auth/login',
+            users: '/api/users',
+            students: '/api/students',
+            teachers: '/api/teachers',
+            subjects: '/api/subjects',
+            classes: '/api/classes',
+            teachingAssignments: '/api/teaching-assignments',
+            attendance: '/api/attendance',
+            marks: '/api/marks',
+            fees: '/api/fees',
+            scholarships: '/api/scholarships',
+            leaves: '/api/leave',
+            notes: '/api/notes',
+            gallery: '/api/gallery',
+            parents: '/api/parents',
+        },
+        documentation: 'https://github.com/Sagar-Bawankule/ERP_system',
+    });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
