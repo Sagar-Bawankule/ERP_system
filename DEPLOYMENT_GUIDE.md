@@ -27,7 +27,7 @@
 1. Security → Database Access → Add New Database User
 2. Authentication Method: **Password**
 3. Username: `erp_admin`
-4. Password: Click "Autogenerate Secure Password" (SAVE THIS!)
+4. Password: Click "Autogenerate Secure Password" (owy5wdg1ECF9e7Nw)
 5. Database User Privileges: **Read and write to any database**
 6. Click "Add User"
 
