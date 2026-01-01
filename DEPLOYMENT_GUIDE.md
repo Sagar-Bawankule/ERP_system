@@ -43,6 +43,7 @@
 4. Copy the connection string:
    ```
    mongodb+srv://erp_admin:<password>@college-erp-cluster.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   
    ```
 5. Replace `<password>` with your actual password
 6. Add database name: `mongodb+srv://erp_admin:YOUR_PASSWORD@college-erp-cluster.xxxxx.mongodb.net/erp_system?retryWrites=true&w=majority`

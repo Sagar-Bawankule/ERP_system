@@ -5,6 +5,8 @@
 
 A comprehensive full-stack Educational ERP System with centralized platform for managing academic, administrative, and financial operations.
 
+> **📱 Now Available as Mobile App!** - Android APK ready for download. See [Mobile App Guide](#-mobile-app) below.
+
 ---
 
 ## 🌟 Features
@@ -43,6 +45,7 @@ A comprehensive full-stack Educational ERP System with centralized platform for 
 - Chart.js for analytics
 - React Toastify for notifications
 - Modern CSS with CSS Variables
+- **Capacitor 8** - Native mobile app support
 
 ---
 
@@ -62,6 +65,7 @@ ERP_system/
 │   └── package.json
 │
 ├── frontend/
+│   ├── android/          # Android mobile app (Capacitor)
 │   ├── public/           # Static assets
 │   ├── src/
 │   │   ├── components/   # Reusable components
@@ -70,8 +74,10 @@ ERP_system/
 │   │   ├── services/     # API services
 │   │   ├── App.js        # Main app component
 │   │   └── index.css     # Global styles
+│   ├── capacitor.config.ts
 │   └── package.json
 │
+├── MOBILE_APP_GUIDE.md   # Mobile app build instructions
 └── README.md
 ```
 
@@ -83,6 +89,7 @@ ERP_system/
 - Node.js (v16 or higher)
 - MongoDB (local or Atlas)
 - npm or yarn
+- **For Mobile App**: Android Studio + JDK 11+
 
 ### Backend Setup
 
@@ -116,7 +123,7 @@ node seedData.js
 npm run dev
 ```
 
-### Frontend Setup
+### Frontend Setup (Web)
 
 1. Navigate to frontend directory:
 ```bash
@@ -132,6 +139,56 @@ npm install
 ```bash
 npm start
 ```
+
+The web app will open at `http://localhost:3000`
+
+---
+
+## 📱 Mobile App
+
+### Quick Start
+
+The ERP system is now available as a native Android mobile app!
+
+**Build Mobile App**:
+```bash
+cd frontend
+npm run build:mobile
+npm run open:android
+```
+
+Then build APK in Android Studio:
+- **Build** → **Build Bundle(s) / APK(s)** → **Build APK(s)**
+
+### Complete Guide
+
+For detailed instructions on building, configuring, and deploying the mobile app, see:
+
+📖 **[MOBILE_APP_GUIDE.md](./MOBILE_APP_GUIDE.md)**
+
+The guide covers:
+- Setting up Android Studio
+- Configuring backend URL (ngrok or deployed server)
+- Building APK for testing
+- Signing APK for Play Store
+- Troubleshooting common issues
+- Complete testing checklist
+
+### Mobile App Features
+
+The mobile app includes **all web features**:
+- ✅ Same backend and database
+- ✅ All user roles (Admin, Teacher, Student, Parent)
+- ✅ All dashboards and functionality
+- ✅ File upload/download
+- ✅ Responsive mobile UI
+- ✅ Native performance
+
+**App Details**:
+- **Package ID**: `com.samarthcollege.erp`
+- **Name**: Samarth College ERP
+- **Platform**: Android (iOS can be added)
+- **Min SDK**: Android 5.0 (API 21)
 
 ---
 
@@ -175,14 +232,29 @@ npm start
 
 ---
 
-## 📱 Screenshots
+## 📱 Platform Availability
 
-The application features:
-- Modern landing page with carousel
-- Role-based dashboards
-- Responsive design for all devices
-- Real-time notifications
-- Interactive charts and analytics
+| Platform | Status | Link |
+|----------|--------|------|
+| 🌐 Web App | ✅ Live | `http://localhost:3000` |
+| 📱 Android App | ✅ Ready | Build APK (see guide) |
+| 🍎 iOS App | 🔜 Coming Soon | Requires Mac + Xcode |
+
+---
+
+## 🚀 Deployment
+
+### Web Application
+- Frontend: Deploy to Vercel, Netlify, or Render
+- Backend: Deploy to Render, Railway, or Heroku
+- Database: MongoDB Atlas (recommended)
+
+### Mobile Application
+- Build signed APK using Android Studio
+- Upload to Google Play Store
+- Follow Play Store publishing guidelines
+
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed instructions.
 
 ---
 
@@ -201,3 +273,14 @@ Built with ❤️ for Samarth College of Engineering & Management, Belhe
 ## 🤝 Support
 
 For support, email: support@samarthcollege.edu.in
+
+---
+
+## 📚 Additional Documentation
+
+- [MOBILE_APP_GUIDE.md](./MOBILE_APP_GUIDE.md) - Mobile app setup and build instructions
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Deployment instructions
+
+---
+
+**⭐ Star this repository if you find it helpful!**

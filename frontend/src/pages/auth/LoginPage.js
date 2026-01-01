@@ -49,7 +49,12 @@ const LoginPage = () => {
     ];
 
     const fillDemo = (role, email, password) => {
-        setFormData({ email, password });
+        // Only auto-fill credentials for Admin, others just set the role
+        if (role === 'Admin') {
+            setFormData({ email, password });
+        } else {
+            setFormData({ email: '', password: '' });
+        }
         setSelectedRole(role);
     };
 

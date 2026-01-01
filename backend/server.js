@@ -39,9 +39,25 @@ app.use(helmet({
 }));
 
 // CORS configuration
-const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'capacitor://localhost',  // Capacitor iOS
+    'http://localhost',       // Capacitor Android
+    'https://localhost',      // Capacitor Android HTTPS
+].map(url => url.replace(/\/$/, ''));
+
 app.use(cors({
-    origin: frontendUrl,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin) return callback(null, true);
+
+        // Check if origin is allowed
+        if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+            callback(null, true);
+        } else {
+            callback(null, true); // For development, allow all origins
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
