@@ -192,16 +192,6 @@ The mobile app includes **all web features**:
 
 ---
 
-## 🔐 Demo Credentials
-
-| Role    | Email                            | Password    |
-|---------|----------------------------------|-------------|
-| Admin   | admin@samarthcollege.edu.in      | admin123    |
-| Teacher | teacher1@samarthcollege.edu.in   | teacher123  |
-| Student | student1@samarthcollege.edu.in   | student123  |
-| Parent  | parent1@gmail.com                | parent123   |
-
----
 
 ## 📡 API Endpoints
 
