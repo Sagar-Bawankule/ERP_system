@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FiUsers, FiDollarSign, FiCalendar, FiFileText, FiTrendingUp, FiAlertTriangle } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -127,21 +128,21 @@ const AdminDashboard = () => {
                     <h2>Quick Actions</h2>
                 </div>
                 <div style={{ padding: 'var(--spacing-6)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--spacing-4)' }}>
-                    <a href="/admin/students" className="btn btn-primary">
+                    <Link to="/admin/students" className="btn btn-primary">
                         <FiUsers /> Manage Students
-                    </a>
-                    <a href="/admin/teachers" className="btn btn-secondary">
+                    </Link>
+                    <Link to="/admin/teachers" className="btn btn-secondary">
                         <FiUsers /> Manage Teachers
-                    </a>
-                    <a href="/admin/fees" className="btn btn-secondary">
+                    </Link>
+                    <Link to="/admin/fees" className="btn btn-secondary">
                         <FiDollarSign /> Fee Management
-                    </a>
-                    <a href="/admin/leaves" className="btn btn-secondary">
+                    </Link>
+                    <Link to="/admin/leaves" className="btn btn-secondary">
                         <FiCalendar /> Leave Approval
-                    </a>
-                    <a href="/admin/reports" className="btn btn-secondary">
+                    </Link>
+                    <Link to="/admin/reports" className="btn btn-secondary">
                         <FiFileText /> Reports
-                    </a>
+                    </Link>
                 </div>
             </div>
 
