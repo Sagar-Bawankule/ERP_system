@@ -1,6 +1,7 @@
 /* Landing Page Styles */
 .landing-page {
-    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 /* Hero Section */

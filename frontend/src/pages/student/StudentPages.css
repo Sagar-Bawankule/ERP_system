@@ -524,8 +524,6 @@
 .note-card-footer {
     padding: var(--spacing-4) var(--spacing-5);
     background: var(--bg-secondary);
-    display: flex;
-    justify-content: space-between;
     align-items: center;
 }
 
@@ -537,13 +535,29 @@
 }
 
 @media (max-width: 768px) {
+
+    /* Base page styles */
+    .student-page {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
     .summary-grid {
         grid-template-columns: 1fr;
     }
 
     .page-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+    }
+
+    .page-header h1 {
+        font-size: var(--text-xl);
+    }
+
+    .page-header .btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .fee-cards-grid {
@@ -553,4 +567,149 @@
     .notes-grid {
         grid-template-columns: 1fr;
     }
+
+    /* Section card fixes */
+    .section-card {
+        border-radius: var(--radius-lg);
+        margin-left: 0;
+        margin-right: 0;
+        margin-bottom: var(--spacing-4);
+    }
+
+    .section-header {
+        padding: var(--spacing-4);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-2);
+    }
+
+    .section-header h2 {
+        font-size: var(--text-base);
+    }
+
+    /* Table horizontal scroll */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Summary card mobile */
+    .summary-card {
+        padding: var(--spacing-4);
+    }
+
+    .summary-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .summary-content h3 {
+        font-size: var(--text-xl);
+    }
+
+    /* Filter grid mobile */
+    .filter-grid,
+    [style*="grid-template-columns: repeat(auto-fit"] {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* Action buttons in tables */
+    .table td .btn {
+        padding: var(--spacing-2);
+        font-size: var(--text-xs);
+    }
+
+    .table td [style*="display: flex"][style*="gap"] {
+        flex-wrap: wrap;
+    }
+}
+
+/* Modal Mobile Fixes */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--spacing-4);
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--radius-xl);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--spacing-6);
+}
+
+@media (max-width: 768px) {
+    .modal-overlay {
+        padding: var(--spacing-2);
+        align-items: flex-end;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        max-height: 85vh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        padding: var(--spacing-4);
+    }
+
+    .modal-content [style*="grid-template-columns: 1fr 1fr"] {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .modal-header {
+        padding-bottom: var(--spacing-3);
+        margin-bottom: var(--spacing-3);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-header h2 {
+        font-size: var(--text-lg);
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: var(--spacing-2);
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Form actions */
+.form-actions {
+    display: flex;
+    gap: var(--spacing-3);
+    justify-content: flex-end;
+    margin-top: var(--spacing-4);
+}
+
+/* Modal header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-4);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: var(--spacing-2);
 }
