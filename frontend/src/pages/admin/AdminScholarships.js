@@ -20,8 +20,12 @@ const AdminScholarships = () => {
 
     const fetchData = async () => {
         try {
-            const res = await api.get('/scholarships');
-            setScholarships(res.data.data || []);
+            const [scholarshipsRes, applicationsRes] = await Promise.all([
+                api.get('/scholarships'),
+                api.get('/scholarships/applications').catch(() => ({ data: { data: [] } }))
+            ]);
+            setScholarships(scholarshipsRes.data.data || []);
+            setApplications(applicationsRes.data.data || []);
         } catch (error) {
             // Demo data
             setScholarships([
@@ -39,31 +43,50 @@ const AdminScholarships = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const newScholarship = {
-            _id: Date.now().toString(),
-            ...formData,
-            amount: parseInt(formData.amount),
-            applicantCount: 0,
-            status: 'Active'
-        };
-        setScholarships([...scholarships, newScholarship]);
-        setShowModal(false);
-        setFormData({ name: '', description: '', amount: '', eligibilityCriteria: '', applicationDeadline: '' });
-        toast.success('Scholarship created successfully!');
+        try {
+            const scholarshipData = {
+                ...formData,
+                amount: parseInt(formData.amount)
+            };
+            const res = await api.post('/scholarships', scholarshipData);
+            if (res.data.success) {
+                toast.success('Scholarship created successfully!');
+                fetchData();
+                setShowModal(false);
+                setFormData({ name: '', description: '', amount: '', eligibilityCriteria: '', applicationDeadline: '' });
+            }
+        } catch (error) {
+            console.error('Scholarship creation failed:', error);
+            toast.error(error.response?.data?.message || 'Failed to create scholarship');
+        }
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this scholarship?')) {
-            setScholarships(scholarships.filter(s => s._id !== id));
-            toast.success('Scholarship deleted successfully');
+            try {
+                const res = await api.delete(`/scholarships/${id}`);
+                if (res.data.success) {
+                    toast.success('Scholarship deleted successfully');
+                    fetchData();
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                toast.error(error.response?.data?.message || 'Failed to delete scholarship');
+            }
         }
     };
 
     const handleApplicationStatus = async (appId, status) => {
-        setApplications(applications.map(app =>
-            app._id === appId ? { ...app, status } : app
-        ));
-        toast.success(`Application ${status.toLowerCase()}`);
+        try {
+            const res = await api.put(`/scholarships/applications/${appId}/status`, { status });
+            if (res.data.success) {
+                toast.success(`Application ${status.toLowerCase()}`);
+                fetchData();
+            }
+        } catch (error) {
+            console.error('Status update failed:', error);
+            toast.error(error.response?.data?.message || 'Failed to update status');
+        }
     };
 
     const getStatusClass = (status) => {

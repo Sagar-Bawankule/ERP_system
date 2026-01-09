@@ -16,6 +16,19 @@ const AdminGallery = () => {
 
     const categories = ['Campus', 'Events', 'Sports', 'Cultural', 'Laboratory', 'Library', 'Hostel'];
 
+    // Helper to get the correct image URL from the database record
+    const getImageUrl = (image) => {
+        if (image.image?.url) {
+            // If it's a relative path from backend, prepend the API base URL
+            if (image.image.url.startsWith('/uploads')) {
+                return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${image.image.url}`;
+            }
+            return image.image.url;
+        }
+        // Fallback for demo/placeholder data
+        return image.imageUrl || '/logo2.jpg';
+    };
+
     useEffect(() => {
         fetchImages();
     }, []);
@@ -43,25 +56,46 @@ const AdminGallery = () => {
             toast.error('Please fill required fields');
             return;
         }
+        if (!uploadForm.file) {
+            toast.error('Please select an image file');
+            return;
+        }
 
-        const newImage = {
-            _id: Date.now().toString(),
-            title: uploadForm.title,
-            category: uploadForm.category,
-            description: uploadForm.description,
-            imageUrl: '/clg_maindoor.jpg', // Placeholder
-            uploadedAt: new Date()
-        };
-        setImages([newImage, ...images]);
-        setShowUploadModal(false);
-        setUploadForm({ title: '', category: '', description: '', file: null });
-        toast.success('Image uploaded successfully!');
+        try {
+            const formData = new FormData();
+            formData.append('title', uploadForm.title);
+            formData.append('category', uploadForm.category);
+            formData.append('description', uploadForm.description || '');
+            formData.append('galleryImage', uploadForm.file);
+
+            const res = await api.post('/gallery', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data.success) {
+                toast.success('Image uploaded successfully!');
+                fetchImages(); // Refresh gallery
+                setShowUploadModal(false);
+                setUploadForm({ title: '', category: '', description: '', file: null });
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error(error.response?.data?.message || 'Failed to upload image');
+        }
     };
 
     const handleDelete = async (imageId) => {
         if (window.confirm('Are you sure you want to delete this image?')) {
-            setImages(images.filter(img => img._id !== imageId));
-            toast.success('Image deleted successfully');
+            try {
+                const res = await api.delete(`/gallery/${imageId}`);
+                if (res.data.success) {
+                    toast.success('Image deleted successfully');
+                    fetchImages(); // Refresh gallery
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                toast.error(error.response?.data?.message || 'Failed to delete image');
+            }
         }
     };
 
@@ -138,7 +172,7 @@ const AdminGallery = () => {
                         <div key={image._id} className="section-card" style={{ overflow: 'hidden' }}>
                             <div style={{ height: 180, background: 'var(--bg-secondary)', position: 'relative' }}>
                                 <img
-                                    src={image.imageUrl}
+                                    src={getImageUrl(image)}
                                     alt={image.title}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     onError={(e) => { e.target.src = '/logo2.jpg'; }}
@@ -181,7 +215,7 @@ const AdminGallery = () => {
                                     <tr key={image._id}>
                                         <td>
                                             <img
-                                                src={image.imageUrl}
+                                                src={getImageUrl(image)}
                                                 alt={image.title}
                                                 style={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
                                                 onError={(e) => { e.target.src = '/logo2.jpg'; }}
@@ -189,7 +223,7 @@ const AdminGallery = () => {
                                         </td>
                                         <td><strong>{image.title}</strong></td>
                                         <td><span className="badge badge-info">{image.category}</span></td>
-                                        <td>{new Date(image.uploadedAt).toLocaleDateString()}</td>
+                                        <td>{new Date(image.createdAt || image.uploadedAt).toLocaleDateString()}</td>
                                         <td>
                                             <button className="btn btn-secondary btn-sm" onClick={() => handleDelete(image._id)} style={{ color: 'var(--error-color)' }}>
                                                 <FiTrash2 /> Delete

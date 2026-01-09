@@ -8,6 +8,16 @@ const GalleryPage = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [activeCategory, setActiveCategory] = useState('All');
 
+    // Helper to get the correct image URL
+    const getImageUrl = (imageUrl) => {
+        if (!imageUrl) return '/logo2.jpg';
+        // If it's a relative path from backend uploads, prepend the API base URL
+        if (imageUrl.startsWith('/uploads')) {
+            return `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${imageUrl}`;
+        }
+        return imageUrl;
+    };
+
     useEffect(() => {
         fetchImages();
     }, []);
@@ -83,7 +93,7 @@ const GalleryPage = () => {
                                     className="gallery-item"
                                     onClick={() => setSelectedImage(image)}
                                 >
-                                    <img src={image.image?.url} alt={image.title} />
+                                    <img src={getImageUrl(image.image?.url)} alt={image.title} />
                                     <div className="gallery-overlay">
                                         <h3>{image.title}</h3>
                                         <span className="badge">{image.category}</span>
@@ -100,7 +110,7 @@ const GalleryPage = () => {
                 <div className="lightbox" onClick={() => setSelectedImage(null)}>
                     <div className="lightbox-content" onClick={e => e.stopPropagation()}>
                         <button className="lightbox-close" onClick={() => setSelectedImage(null)}>×</button>
-                        <img src={selectedImage.image?.url} alt={selectedImage.title} />
+                        <img src={getImageUrl(selectedImage.image?.url)} alt={selectedImage.title} />
                         <div className="lightbox-info">
                             <h3>{selectedImage.title}</h3>
                             <p>{selectedImage.description}</p>

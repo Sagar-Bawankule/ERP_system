@@ -39,28 +39,40 @@ const AdminSubjects = () => {
         e.preventDefault();
         try {
             if (editingSubject) {
-                setSubjects(subjects.map(s => s._id === editingSubject._id ? { ...s, ...formData } : s));
-                toast.success('Subject updated successfully!');
+                // Update existing subject
+                const res = await api.put(`/subjects/${editingSubject._id}`, formData);
+                if (res.data.success) {
+                    toast.success('Subject updated successfully!');
+                    fetchSubjects();
+                }
             } else {
-                const newSubject = {
-                    _id: Date.now().toString(),
-                    ...formData,
-                    teacher: null
-                };
-                setSubjects([...subjects, newSubject]);
-                toast.success('Subject added successfully!');
+                // Create new subject
+                const res = await api.post('/subjects', formData);
+                if (res.data.success) {
+                    toast.success('Subject added successfully!');
+                    fetchSubjects();
+                }
             }
             setShowModal(false);
             resetForm();
         } catch (error) {
-            toast.error('Operation failed');
+            console.error('Subject operation failed:', error);
+            toast.error(error.response?.data?.message || 'Operation failed');
         }
     };
 
     const handleDelete = async (subjectId) => {
         if (window.confirm('Are you sure you want to delete this subject?')) {
-            setSubjects(subjects.filter(s => s._id !== subjectId));
-            toast.success('Subject deleted successfully');
+            try {
+                const res = await api.delete(`/subjects/${subjectId}`);
+                if (res.data.success) {
+                    toast.success('Subject deleted successfully');
+                    fetchSubjects();
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                toast.error(error.response?.data?.message || 'Failed to delete subject');
+            }
         }
     };
 

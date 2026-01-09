@@ -268,6 +268,7 @@ For support, email: support@samarthcollege.edu.in
 
 ## 📚 Additional Documentation
 
+- [SETUP_GUIDE.md](./SETUP_GUIDE.md) - **Complete setup instructions for new developers**
 - [MOBILE_APP_GUIDE.md](./MOBILE_APP_GUIDE.md) - Mobile app setup and build instructions
 - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Deployment instructions
 
