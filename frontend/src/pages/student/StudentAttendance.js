@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiCalendar, FiCheck, FiX, FiClock, FiPieChart } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { attendanceService } from '../../services/api';
@@ -19,37 +19,7 @@ const StudentAttendance = () => {
         new Date().toISOString().slice(0, 7) // YYYY-MM format
     );
 
-    useEffect(() => {
-        if (profile?._id) {
-            fetchAttendance();
-        }
-    }, [profile, selectedMonth]);
-
-    const fetchAttendance = async () => {
-        setLoading(true);
-        try {
-            // Fetch attendance records
-            const res = await attendanceService.getStudent(profile._id, { month: selectedMonth });
-            setAttendance(res.data.data || []);
-
-            // Fetch summary
-            const summaryRes = await attendanceService.getSummary(profile._id);
-            setSummary(summaryRes.data.data?.overall || {
-                total: 0,
-                present: 0,
-                absent: 0,
-                late: 0,
-                percentage: 0,
-            });
-        } catch (error) {
-            console.error('Error fetching attendance:', error);
-            // Set demo data if API fails
-            setDemoData();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
+    const setDemoData = useCallback(() => {
         // Demo attendance data for visualization
         const demoAttendance = [];
         const today = new Date();
@@ -79,7 +49,37 @@ const StudentAttendance = () => {
             late,
             percentage: Math.round(((present + late) / total) * 100),
         });
-    };
+    }, []);
+
+    const fetchAttendance = useCallback(async () => {
+        setLoading(true);
+        try {
+            // Fetch attendance records
+            const res = await attendanceService.getStudent(profile._id, { month: selectedMonth });
+            setAttendance(res.data.data || []);
+
+            // Fetch summary
+            const summaryRes = await attendanceService.getSummary(profile._id);
+            setSummary(summaryRes.data.data?.overall || {
+                total: 0,
+                present: 0,
+                absent: 0,
+                late: 0,
+                percentage: 0,
+            });
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+            // Set demo data if API fails
+            setDemoData();
+        }
+        setLoading(false);
+    }, [profile, selectedMonth, setDemoData]);
+
+    useEffect(() => {
+        if (profile?._id) {
+            fetchAttendance();
+        }
+    }, [profile, selectedMonth, fetchAttendance]);
 
     const getStatusIcon = (status) => {
         switch (status) {

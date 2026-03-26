@@ -14,6 +14,12 @@ const Note = require('./Note');
 const LeaveApplication = require('./LeaveApplication');
 const CollegeGallery = require('./CollegeGallery');
 const Notification = require('./Notification');
+const { Book, BookIssue } = require('./Book');
+const FrontOffice = require('./FrontOffice');
+const Income = require('./Income');
+const Expense = require('./Expense');
+const Notice = require('./Notice');
+const NoticeReadStatus = require('./NoticeReadStatus');
 
 module.exports = {
     User,
@@ -33,4 +39,11 @@ module.exports = {
     LeaveApplication,
     CollegeGallery,
     Notification,
+    Book,
+    BookIssue,
+    FrontOffice,
+    Income,
+    Expense,
+    Notice,
+    NoticeReadStatus,
 };

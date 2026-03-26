@@ -142,24 +142,46 @@ const updateStudent = asyncHandler(async (req, res) => {
         });
     }
 
-    const allowedUpdates = ['semester', 'section', 'bloodGroup', 'aadharNumber', 'enrolledSubjects'];
+    const allowedUpdates = ['semester', 'section', 'bloodGroup', 'aadharNumber', 'enrolledSubjects', 'dateOfBirth', 'gender', 'category'];
 
     // Admin can update more fields
     if (req.user.role === 'admin') {
-        allowedUpdates.push('department', 'course', 'batch', 'category', 'isActive');
+        allowedUpdates.push('department', 'course', 'batch', 'isActive', 'rollNumber');
     }
 
-    const updates = {};
+    // Update Student model fields
+    const studentUpdates = {};
     for (const key of allowedUpdates) {
         if (req.body[key] !== undefined) {
-            updates[key] = req.body[key];
+            studentUpdates[key] = req.body[key];
         }
     }
 
-    student = await Student.findByIdAndUpdate(req.params.id, updates, {
+    // Update User model fields (admin only)
+    if (req.user.role === 'admin') {
+        const userUpdates = {};
+        const allowedUserUpdates = ['firstName', 'lastName', 'phone'];
+
+        for (const key of allowedUserUpdates) {
+            if (req.body[key] !== undefined) {
+                userUpdates[key] = req.body[key];
+            }
+        }
+
+        // Update User if there are user fields to update
+        if (Object.keys(userUpdates).length > 0) {
+            await User.findByIdAndUpdate(student.user, userUpdates, {
+                new: true,
+                runValidators: true,
+            });
+        }
+    }
+
+    // Update Student model
+    student = await Student.findByIdAndUpdate(req.params.id, studentUpdates, {
         new: true,
         runValidators: true,
-    }).populate('user', 'firstName lastName email');
+    }).populate('user', 'firstName lastName email phone');
 
     res.json({
         success: true,

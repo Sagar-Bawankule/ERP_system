@@ -1,31 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { FiFileText, FiDownload, FiBook, FiSearch, FiFilter } from 'react-icons/fi';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiFileText, FiDownload, FiBook, FiSearch } from 'react-icons/fi';
 import { noteService } from '../../services/api';
 import './StudentPages.css';
 
 const StudentNotes = () => {
-    const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
     const [notes, setNotes] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('All');
 
-    useEffect(() => {
-        fetchNotes();
-    }, []);
-
-    const fetchNotes = async () => {
-        try {
-            const res = await noteService.getAll();
-            setNotes(res.data.data || []);
-        } catch (error) {
-            setDemoData();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
+    const setDemoData = useCallback(() => {
         setNotes([
             { _id: '1', title: 'DBMS Unit 1 - Introduction to Database', type: 'Notes', subject: { name: 'Database Management Systems', code: 'CS301' }, uploadedBy: { user: { firstName: 'Dr. Rajesh', lastName: 'Sharma' } }, downloads: 45, createdAt: new Date('2024-12-01') },
             { _id: '2', title: 'OS Process Management', type: 'Notes', subject: { name: 'Operating Systems', code: 'CS302' }, uploadedBy: { user: { firstName: 'Prof. Sunita', lastName: 'Deshmukh' } }, downloads: 38, createdAt: new Date('2024-11-28') },
@@ -34,7 +18,21 @@ const StudentNotes = () => {
             { _id: '5', title: 'Machine Learning Basics', type: 'Notes', subject: { name: 'Machine Learning', code: 'CS401' }, uploadedBy: { user: { firstName: 'Dr. Rajesh', lastName: 'Sharma' } }, downloads: 67, createdAt: new Date('2024-12-15') },
         ]);
         setLoading(false);
-    };
+    }, []);
+
+    const fetchNotes = useCallback(async () => {
+        try {
+            const res = await noteService.getAll();
+            setNotes(res.data.data || []);
+        } catch (error) {
+            setDemoData();
+        }
+        setLoading(false);
+    }, [setDemoData]);
+
+    useEffect(() => {
+        fetchNotes();
+    }, [fetchNotes]);
 
     const filteredNotes = notes.filter(note => {
         const matchesSearch = note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||

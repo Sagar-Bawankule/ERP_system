@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiDollarSign, FiCreditCard, FiDownload, FiCalendar, FiChevronLeft, FiCheck, FiClock, FiAlertCircle } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { parentService } from '../../services/api';
@@ -11,17 +11,7 @@ const ParentFees = () => {
     const [fees, setFees] = useState([]);
     const [summary, setSummary] = useState({ total: 0, paid: 0, due: 0 });
 
-    useEffect(() => {
-        fetchWardsData();
-    }, []);
-
-    useEffect(() => {
-        if (selectedWard) {
-            fetchFees();
-        }
-    }, [selectedWard]);
-
-    const fetchWardsData = async () => {
+    const setDemoData = useCallback(async () => {
         try {
             const res = await parentService.getWardDashboard();
             const wards = res.data.data || [];
@@ -31,47 +21,21 @@ const ParentFees = () => {
             }
         } catch (error) {
             console.error('Error fetching wards:', error);
-            setDemoData();
+            const demoWards = [{
+                student: {
+                    id: 'demo-1',
+                    name: 'John Smith',
+                    rollNumber: 'CS2021001',
+                    department: 'Computer Science',
+                    semester: 5,
+                }
+            }];
+            setWardsData(demoWards);
+            setSelectedWard(demoWards[0]);
         }
-    };
+    }, []);
 
-    const fetchFees = async () => {
-        setLoading(true);
-        try {
-            const res = await parentService.getWardFees(selectedWard.student.id);
-            const feesData = res.data.data || [];
-            setFees(feesData);
-
-            // Calculate summary
-            const calcSummary = feesData.reduce((acc, fee) => ({
-                total: acc.total + (fee.totalAmount || 0),
-                paid: acc.paid + (fee.paidAmount || 0),
-                due: acc.due + (fee.dueAmount || 0),
-            }), { total: 0, paid: 0, due: 0 });
-
-            setSummary(calcSummary);
-        } catch (error) {
-            console.error('Error fetching fees:', error);
-            setDemoFees();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
-        const demoWards = [{
-            student: {
-                id: 'demo-1',
-                name: 'John Smith',
-                rollNumber: 'CS2021001',
-                department: 'Computer Science',
-                semester: 5,
-            }
-        }];
-        setWardsData(demoWards);
-        setSelectedWard(demoWards[0]);
-    };
-
-    const setDemoFees = () => {
+    const setDemoFees = useCallback(() => {
         const demoFees = [
             {
                 _id: '1',
@@ -135,7 +99,53 @@ const ParentFees = () => {
         setFees(demoFees);
         setSummary({ total: 64200, paid: 59000, due: 5200 });
         setLoading(false);
-    };
+    }, []);
+
+    const fetchWardsData = useCallback(async () => {
+        try {
+            const res = await parentService.getWardDashboard();
+            const wards = res.data.data || [];
+            setWardsData(wards);
+            if (wards.length > 0) {
+                setSelectedWard(wards[0]);
+            }
+        } catch (error) {
+            console.error('Error fetching wards:', error);
+            setDemoData();
+        }
+    }, [setDemoData]);
+
+    const fetchFees = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await parentService.getWardFees(selectedWard.student.id);
+            const feesData = res.data.data || [];
+            setFees(feesData);
+
+            // Calculate summary
+            const calcSummary = feesData.reduce((acc, fee) => ({
+                total: acc.total + (fee.totalAmount || 0),
+                paid: acc.paid + (fee.paidAmount || 0),
+                due: acc.due + (fee.dueAmount || 0),
+            }), { total: 0, paid: 0, due: 0 });
+
+            setSummary(calcSummary);
+        } catch (error) {
+            console.error('Error fetching fees:', error);
+            setDemoFees();
+        }
+        setLoading(false);
+    }, [selectedWard, setDemoFees]);
+
+    useEffect(() => {
+        fetchWardsData();
+    }, [fetchWardsData]);
+
+    useEffect(() => {
+        if (selectedWard) {
+            fetchFees();
+        }
+    }, [selectedWard, fetchFees]);
 
     const getStatusClass = (status) => {
         switch (status) {

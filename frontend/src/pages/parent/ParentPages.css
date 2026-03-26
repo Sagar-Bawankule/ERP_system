@@ -16,8 +16,8 @@
     padding: var(--spacing-2);
 }
 
-/* Dashboard Header */
-.dashboard-header {
+/* Parent Page Header */
+.parent-page-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;

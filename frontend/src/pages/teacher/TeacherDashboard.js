@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiUsers, FiCalendar, FiBook, FiFileText, FiBell } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
 import '../student/StudentPages.css';
 
 const TeacherDashboard = () => {
@@ -15,11 +14,7 @@ const TeacherDashboard = () => {
     });
     const [recentActivity, setRecentActivity] = useState([]);
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
-
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
         try {
             // Try to get teacher-specific data
             const studentCount = profile?.assignedClasses?.length * 30 || 60;
@@ -42,7 +37,11 @@ const TeacherDashboard = () => {
             console.error('Error fetching dashboard data:', error);
         }
         setLoading(false);
-    };
+    }, [profile]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     if (loading) {
         return (

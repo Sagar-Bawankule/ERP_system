@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiDollarSign, FiCreditCard, FiDownload, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { feeService } from '../../services/api';
@@ -10,41 +10,7 @@ const StudentFees = () => {
     const [fees, setFees] = useState([]);
     const [summary, setSummary] = useState({ total: 0, paid: 0, due: 0 });
 
-    useEffect(() => {
-        if (profile?._id) {
-            fetchFees();
-        } else {
-            setDemoData();
-        }
-    }, [profile]);
-
-    const fetchFees = async () => {
-        try {
-            const res = await feeService.getStudentFees(profile._id);
-            const feesData = res.data.data || [];
-
-            // Map fee data to include structure name
-            const formattedFees = feesData.map(fee => ({
-                ...fee,
-                name: fee.feeStructure?.name || fee.name || 'Fee',
-            }));
-            setFees(formattedFees);
-
-            // Calculate summary from fees (backend returns totalAmount/paidAmount/dueAmount)
-            const calcSummary = {
-                total: res.data.summary?.totalAmount || feesData.reduce((sum, f) => sum + (f.totalAmount || 0), 0),
-                paid: res.data.summary?.paidAmount || feesData.reduce((sum, f) => sum + (f.paidAmount || 0), 0),
-                due: res.data.summary?.dueAmount || feesData.reduce((sum, f) => sum + (f.dueAmount || 0), 0),
-            };
-            setSummary(calcSummary);
-        } catch (error) {
-            console.error('Error fetching fees:', error);
-            setDemoData();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
+    const setDemoData = useCallback(() => {
         setFees([
             {
                 _id: '1',
@@ -71,7 +37,41 @@ const StudentFees = () => {
         ]);
         setSummary({ total: 57700, paid: 55000, due: 2700 });
         setLoading(false);
-    };
+    }, []);
+
+    const fetchFees = useCallback(async () => {
+        try {
+            const res = await feeService.getStudentFees(profile._id);
+            const feesData = res.data.data || [];
+
+            // Map fee data to include structure name
+            const formattedFees = feesData.map(fee => ({
+                ...fee,
+                name: fee.feeStructure?.name || fee.name || 'Fee',
+            }));
+            setFees(formattedFees);
+
+            // Calculate summary from fees (backend returns totalAmount/paidAmount/dueAmount)
+            const calcSummary = {
+                total: res.data.summary?.totalAmount || feesData.reduce((sum, f) => sum + (f.totalAmount || 0), 0),
+                paid: res.data.summary?.paidAmount || feesData.reduce((sum, f) => sum + (f.paidAmount || 0), 0),
+                due: res.data.summary?.dueAmount || feesData.reduce((sum, f) => sum + (f.dueAmount || 0), 0),
+            };
+            setSummary(calcSummary);
+        } catch (error) {
+            console.error('Error fetching fees:', error);
+            setDemoData();
+        }
+        setLoading(false);
+    }, [profile, setDemoData]);
+
+    useEffect(() => {
+        if (profile?._id) {
+            fetchFees();
+        } else {
+            setDemoData();
+        }
+    }, [profile, fetchFees, setDemoData]);
 
     const getStatusClass = (status) => {
         switch (status) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiBook, FiAward, FiAlertTriangle, FiTrendingUp } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { marksService } from '../../services/api';
@@ -10,15 +10,19 @@ const StudentMarks = () => {
     const [marks, setMarks] = useState([]);
     const [summary, setSummary] = useState({ cgpa: 0, totalCredits: 0, backlogs: 0 });
 
-    useEffect(() => {
-        if (profile?._id) {
-            fetchMarks();
-        } else {
-            setDemoData();
-        }
-    }, [profile]);
+    const setDemoData = useCallback(() => {
+        setMarks([
+            { _id: '1', subject: { name: 'Database Management Systems', code: 'CS301', credits: 4 }, examType: 'End Semester', marksObtained: 78, maxMarks: 100, grade: 'A', isPassed: true, semester: 5, academicYear: '2024-25' },
+            { _id: '2', subject: { name: 'Operating Systems', code: 'CS302', credits: 4 }, examType: 'End Semester', marksObtained: 65, maxMarks: 100, grade: 'B+', isPassed: true, semester: 5, academicYear: '2024-25' },
+            { _id: '3', subject: { name: 'Computer Networks', code: 'CS303', credits: 3 }, examType: 'End Semester', marksObtained: 82, maxMarks: 100, grade: 'A+', isPassed: true, semester: 5, academicYear: '2024-25' },
+            { _id: '4', subject: { name: 'Data Structures', code: 'CS201', credits: 4 }, examType: 'End Semester', marksObtained: 72, maxMarks: 100, grade: 'A', isPassed: true, semester: 3, academicYear: '2023-24' },
+            { _id: '5', subject: { name: 'Object Oriented Programming', code: 'CS202', credits: 4 }, examType: 'End Semester', marksObtained: 58, maxMarks: 100, grade: 'B', isPassed: true, semester: 3, academicYear: '2023-24' },
+        ]);
+        setSummary({ cgpa: 8.2, totalCredits: 19, backlogs: 0 });
+        setLoading(false);
+    }, []);
 
-    const fetchMarks = async () => {
+    const fetchMarks = useCallback(async () => {
         try {
             const res = await marksService.getStudentMarks(profile._id);
             // Backend returns marks grouped by subject: [{ subject, marks: [...] }, ...]
@@ -37,19 +41,15 @@ const StudentMarks = () => {
             setDemoData();
         }
         setLoading(false);
-    };
+    }, [profile, setDemoData]);
 
-    const setDemoData = () => {
-        setMarks([
-            { _id: '1', subject: { name: 'Database Management Systems', code: 'CS301', credits: 4 }, examType: 'End Semester', marksObtained: 78, maxMarks: 100, grade: 'A', isPassed: true, semester: 5, academicYear: '2024-25' },
-            { _id: '2', subject: { name: 'Operating Systems', code: 'CS302', credits: 4 }, examType: 'End Semester', marksObtained: 65, maxMarks: 100, grade: 'B+', isPassed: true, semester: 5, academicYear: '2024-25' },
-            { _id: '3', subject: { name: 'Computer Networks', code: 'CS303', credits: 3 }, examType: 'End Semester', marksObtained: 82, maxMarks: 100, grade: 'A+', isPassed: true, semester: 5, academicYear: '2024-25' },
-            { _id: '4', subject: { name: 'Data Structures', code: 'CS201', credits: 4 }, examType: 'End Semester', marksObtained: 72, maxMarks: 100, grade: 'A', isPassed: true, semester: 3, academicYear: '2023-24' },
-            { _id: '5', subject: { name: 'Object Oriented Programming', code: 'CS202', credits: 4 }, examType: 'End Semester', marksObtained: 58, maxMarks: 100, grade: 'B', isPassed: true, semester: 3, academicYear: '2023-24' },
-        ]);
-        setSummary({ cgpa: 8.2, totalCredits: 19, backlogs: 0 });
-        setLoading(false);
-    };
+    useEffect(() => {
+        if (profile?._id) {
+            fetchMarks();
+        } else {
+            setDemoData();
+        }
+    }, [profile, fetchMarks, setDemoData]);
 
     const groupedBySemester = marks.reduce((acc, mark) => {
         const sem = mark.semester || 'Other';

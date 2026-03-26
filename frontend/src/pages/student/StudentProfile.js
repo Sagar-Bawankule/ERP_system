@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiUser, FiMail, FiPhone, FiCalendar, FiBook, FiEdit2, FiSave, FiCamera } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiEdit2, FiSave, FiCamera } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import './StudentPages.css';

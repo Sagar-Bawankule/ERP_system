@@ -16,7 +16,7 @@ const { protect, authorize } = require('../middleware/auth');
 
 // All routes are protected and admin only
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize('admin', 'super_admin'));
 
 // Dashboard
 router.get('/dashboard', getDashboardStats);

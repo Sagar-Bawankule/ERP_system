@@ -20,8 +20,8 @@ router.post('/', authorize('admin'), createStudent);
 router.delete('/:id', authorize('admin'), deleteStudent);
 router.post('/:id/academic-history', authorize('admin'), updateAcademicHistory);
 
-// Admin and Teacher routes
-router.get('/', authorize('admin', 'teacher'), getAllStudents);
+// Admin, Teacher, and Librarian routes
+router.get('/', authorize('admin', 'teacher', 'librarian'), getAllStudents);
 router.get('/class/:department/:semester/:section', authorize('admin', 'teacher'), getStudentsByClass);
 
 // All authenticated users

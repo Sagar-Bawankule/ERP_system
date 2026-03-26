@@ -23,6 +23,12 @@ const adminRoutes = require('./routes/adminRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 const classRoutes = require('./routes/classRoutes');
 const teachingAssignmentRoutes = require('./routes/teachingAssignmentRoutes');
+const superAdminRoutes = require('./routes/superAdminRoutes');
+const libraryRoutes = require('./routes/libraryRoutes');
+const frontOfficeRoutes = require('./routes/frontOfficeRoutes');
+const accountantRoutes = require('./routes/accountantRoutes');
+const communicationsRoutes = require('./routes/communicationsRoutes');
+const noticeRoutes = require('./routes/noticeRoutes');
 
 // Initialize Express app
 const app = express();
@@ -86,6 +92,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/teaching-assignments', teachingAssignmentRoutes);
+app.use('/api/super-admin', superAdminRoutes);
+app.use('/api/library', libraryRoutes);
+app.use('/api/front-office', frontOfficeRoutes);
+app.use('/api/accountant', accountantRoutes);
+app.use('/api/communications', communicationsRoutes);
+app.use('/api/notices', noticeRoutes);
 
 // Root endpoint - API information
 app.get('/', (req, res) => {
@@ -108,6 +120,7 @@ app.get('/', (req, res) => {
             scholarships: '/api/scholarships',
             leaves: '/api/leave',
             notes: '/api/notes',
+            notices: '/api/notices',
             gallery: '/api/gallery',
             parents: '/api/parents',
         },

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { FiMenu, FiX, FiChevronDown, FiUser, FiLogIn } from 'react-icons/fi';
+import { FiMenu, FiX, FiUser, FiLogIn } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import './MainLayout.css';
 
 const MainLayout = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { isAuthenticated, user, getDashboardRoute } = useAuth();
+    const { isAuthenticated, getDashboardRoute } = useAuth();
     const location = useLocation();
 
     useEffect(() => {
@@ -166,8 +166,8 @@ const MainLayout = () => {
                     <div className="footer-bottom">
                         <p>&copy; {new Date().getFullYear()} Samarth Rural Educational Institute. All Rights Reserved.</p>
                         <div className="footer-links">
-                            <a href="#">Privacy Policy</a>
-                            <a href="#">Terms of Service</a>
+                            <button type="button" style={{ background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>Privacy Policy</button>
+                            <button type="button" style={{ background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>Terms of Service</button>
                         </div>
                     </div>
                 </div>

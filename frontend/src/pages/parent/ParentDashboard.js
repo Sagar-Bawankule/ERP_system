@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
     FiUsers, FiCalendar, FiBookOpen, FiDollarSign,
-    FiBell, FiFileText, FiCheck, FiX, FiClock,
+    FiBell, FiFileText,
     FiTrendingUp, FiPieChart, FiChevronRight
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
@@ -16,31 +16,7 @@ const ParentDashboard = () => {
     const [selectedWard, setSelectedWard] = useState(null);
     const [notifications, setNotifications] = useState([]);
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
-
-    const fetchDashboardData = async () => {
-        try {
-            const [dashboardRes, notificationsRes] = await Promise.all([
-                parentService.getWardDashboard(),
-                parentService.getNotifications()
-            ]);
-
-            const wards = dashboardRes.data.data || [];
-            setWardsData(wards);
-            if (wards.length > 0) {
-                setSelectedWard(wards[0]);
-            }
-            setNotifications(notificationsRes.data.data || []);
-        } catch (error) {
-            console.error('Error fetching dashboard:', error);
-            setDemoData();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
+    const setDemoData = useCallback(() => {
         const demoWards = [
             {
                 student: {
@@ -73,7 +49,31 @@ const ParentDashboard = () => {
             { _id: '2', title: 'Leave Approved', message: 'Your ward\'s leave application has been approved', type: 'leave', createdAt: new Date(Date.now() - 86400000), isRead: true },
             { _id: '3', title: 'PTM Meeting', message: 'Parent-Teacher meeting scheduled for Jan 5', type: 'general', createdAt: new Date(Date.now() - 172800000), isRead: false },
         ]);
-    };
+    }, []);
+
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            const [dashboardRes, notificationsRes] = await Promise.all([
+                parentService.getWardDashboard(),
+                parentService.getNotifications()
+            ]);
+
+            const wards = dashboardRes.data.data || [];
+            setWardsData(wards);
+            if (wards.length > 0) {
+                setSelectedWard(wards[0]);
+            }
+            setNotifications(notificationsRes.data.data || []);
+        } catch (error) {
+            console.error('Error fetching dashboard:', error);
+            setDemoData();
+        }
+        setLoading(false);
+    }, [setDemoData]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     const getAttendanceStatus = (percentage) => {
         if (percentage >= 75) return { class: 'good', label: 'Good Standing' };
@@ -108,7 +108,7 @@ const ParentDashboard = () => {
     return (
         <div className="parent-page animate-fade-in">
             {/* Header with Ward Selector */}
-            <div className="dashboard-header">
+            <div className="parent-page-header">
                 <div className="header-info">
                     <h1>Welcome, {user?.firstName}!</h1>
                     <p>Monitor your ward's academic progress and activities</p>

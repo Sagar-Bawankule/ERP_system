@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiCheck, FiX, FiSave, FiCalendar, FiUsers, FiBook } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
@@ -14,21 +14,6 @@ const TeacherAttendance = () => {
     const [attendanceData, setAttendanceData] = useState({});
     const [loadingAssignments, setLoadingAssignments] = useState(true);
 
-    // Fetch teacher's teaching assignments on mount
-    useEffect(() => {
-        fetchMyAssignments();
-    }, []);
-
-    // Fetch students when assignment is selected
-    useEffect(() => {
-        if (selectedAssignment) {
-            fetchStudentsForAssignment(selectedAssignment._id);
-        } else {
-            setStudents([]);
-            setAttendanceData({});
-        }
-    }, [selectedAssignment]);
-
     const fetchMyAssignments = async () => {
         setLoadingAssignments(true);
         try {
@@ -41,33 +26,7 @@ const TeacherAttendance = () => {
         setLoadingAssignments(false);
     };
 
-    const fetchStudentsForAssignment = async (assignmentId) => {
-        setLoading(true);
-        try {
-            const res = await api.get(`/teaching-assignments/${assignmentId}/students`);
-            const studentList = res.data.data || [];
-            setStudents(studentList);
-
-            // Initialize all as present by default
-            const initialAttendance = {};
-            studentList.forEach(student => {
-                initialAttendance[student._id] = 'Present';
-            });
-            setAttendanceData(initialAttendance);
-
-            // Check if attendance already marked for this date
-            if (studentList.length > 0 && res.data.assignment) {
-                await checkExistingAttendance(res.data.assignment);
-            }
-        } catch (error) {
-            console.error('Error fetching students:', error);
-            toast.error('Failed to load students');
-            setStudents([]);
-        }
-        setLoading(false);
-    };
-
-    const checkExistingAttendance = async (assignmentInfo) => {
+    const checkExistingAttendance = useCallback(async (assignmentInfo) => {
         try {
             const classInfo = assignmentInfo.class;
             if (!classInfo) return;
@@ -95,7 +54,48 @@ const TeacherAttendance = () => {
         } catch (error) {
             console.error('Error checking existing attendance:', error);
         }
-    };
+    }, [selectedDate]);
+
+    const fetchStudentsForAssignment = useCallback(async (assignmentId) => {
+        setLoading(true);
+        try {
+            const res = await api.get(`/teaching-assignments/${assignmentId}/students`);
+            const studentList = res.data.data || [];
+            setStudents(studentList);
+
+            // Initialize all as present by default
+            const initialAttendance = {};
+            studentList.forEach(student => {
+                initialAttendance[student._id] = 'Present';
+            });
+            setAttendanceData(initialAttendance);
+
+            // Check if attendance already marked for this date
+            if (studentList.length > 0 && res.data.assignment) {
+                await checkExistingAttendance(res.data.assignment);
+            }
+        } catch (error) {
+            console.error('Error fetching students:', error);
+            toast.error('Failed to load students');
+            setStudents([]);
+        }
+        setLoading(false);
+    }, [checkExistingAttendance]);
+
+    // Fetch teacher's teaching assignments on mount
+    useEffect(() => {
+        fetchMyAssignments();
+    }, []);
+
+    // Fetch students when assignment is selected
+    useEffect(() => {
+        if (selectedAssignment) {
+            fetchStudentsForAssignment(selectedAssignment._id);
+        } else {
+            setStudents([]);
+            setAttendanceData({});
+        }
+    }, [selectedAssignment, fetchStudentsForAssignment]);
 
     const toggleAttendance = (studentId) => {
         setAttendanceData(prev => ({

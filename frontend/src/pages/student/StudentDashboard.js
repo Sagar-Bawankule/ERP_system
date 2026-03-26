@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
     FiCalendar, FiDollarSign, FiBook, FiFileText,
@@ -18,11 +18,7 @@ const StudentDashboard = () => {
         backlogs: 0,
     });
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, [profile]);
-
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
         if (!profile?._id) {
             setLoading(false);
             return;
@@ -48,7 +44,11 @@ const StudentDashboard = () => {
             console.error('Error fetching dashboard data:', error);
         }
         setLoading(false);
-    };
+    }, [profile]);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     const quickActions = [
         { icon: FiCalendar, label: 'View Attendance', path: '/student/attendance', color: 'primary' },

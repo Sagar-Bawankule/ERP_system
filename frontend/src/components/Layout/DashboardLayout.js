@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     FiHome, FiUsers, FiBook, FiCalendar, FiDollarSign,
     FiFileText, FiAward, FiImage, FiBarChart2, FiSettings,
-    FiLogOut, FiMenu, FiX, FiBell, FiUser, FiChevronDown
+    FiLogOut, FiMenu, FiX, FiBell, FiUser, FiChevronDown,
+    FiHelpCircle, FiMessageSquare
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import './DashboardLayout.css';
@@ -15,6 +16,21 @@ const DashboardLayout = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
+    const dropdownRef = useRef(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setProfileDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -23,10 +39,11 @@ const DashboardLayout = () => {
 
     // Navigation items based on user role
     const getNavItems = () => {
-        const baseRoute = `/${user?.role}`;
+        const baseRoute = user?.role === 'super_admin' ? '/super-admin' : `/${user?.role}`;
 
         const studentNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/fees`, icon: FiDollarSign, label: 'Fees' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks & Results' },
@@ -38,6 +55,7 @@ const DashboardLayout = () => {
 
         const teacherNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
             { path: `${baseRoute}/students`, icon: FiUsers, label: 'Students' },
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks Entry' },
@@ -47,11 +65,18 @@ const DashboardLayout = () => {
 
         const parentNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
+            { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks & Results' },
+            { path: `${baseRoute}/fees`, icon: FiDollarSign, label: 'Fees' },
+            { path: `${baseRoute}/notifications`, icon: FiBell, label: 'Notifications' },
+            { path: `${baseRoute}/leave`, icon: FiCalendar, label: 'Leave' },
             { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
         ];
 
         const adminNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
             { path: `${baseRoute}/students`, icon: FiUsers, label: 'Students' },
             { path: `${baseRoute}/teachers`, icon: FiUsers, label: 'Teachers' },
             { path: `${baseRoute}/parents`, icon: FiUsers, label: 'Parents' },
@@ -66,11 +91,55 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
         ];
 
+        const superAdminNav = [
+            { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/users`, icon: FiUsers, label: 'User Management' },
+            { path: `${baseRoute}/roles`, icon: FiSettings, label: 'Roles & Permissions' },
+            { path: `/admin/students`, icon: FiUsers, label: 'Students' },
+            { path: `/admin/teachers`, icon: FiUsers, label: 'Teachers' },
+            { path: `/admin/fees`, icon: FiDollarSign, label: 'Fees' },
+            { path: `/admin/reports`, icon: FiBarChart2, label: 'Reports' },
+            { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
+        ];
+
+        const accountantNav = [
+            { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/fees`, icon: FiDollarSign, label: 'Fee Collection' },
+            { path: `${baseRoute}/income`, icon: FiBarChart2, label: 'Income' },
+            { path: `${baseRoute}/expenses`, icon: FiBarChart2, label: 'Expenses' },
+            { path: `${baseRoute}/reports`, icon: FiFileText, label: 'Financial Reports' },
+            { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
+        ];
+
+        const librarianNav = [
+            { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/books`, icon: FiBook, label: 'Book Management' },
+            { path: `${baseRoute}/issue`, icon: FiBook, label: 'Issue / Return' },
+            { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
+        ];
+
+        const receptionistNav = [
+            { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
+            { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/front-office`, icon: FiFileText, label: 'Front Office' },
+            { path: `${baseRoute}/visitors`, icon: FiUsers, label: 'Visitor Log' },
+            { path: `${baseRoute}/inquiries`, icon: FiHelpCircle, label: 'Inquiries' },
+            { path: `${baseRoute}/student-info`, icon: FiUser, label: 'Student Information' },
+            { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
+        ];
+
         switch (user?.role) {
+            case 'super_admin': return superAdminNav;
             case 'student': return studentNav;
             case 'teacher': return teacherNav;
             case 'parent': return parentNav;
             case 'admin': return adminNav;
+            case 'accountant': return accountantNav;
+            case 'librarian': return librarianNav;
+            case 'receptionist': return receptionistNav;
             default: return [];
         }
     };
@@ -79,10 +148,14 @@ const DashboardLayout = () => {
 
     const getRoleLabel = () => {
         switch (user?.role) {
+            case 'super_admin': return 'Super Admin Portal';
             case 'student': return 'Student Portal';
             case 'teacher': return 'Teacher Portal';
             case 'parent': return 'Parent Portal';
             case 'admin': return 'Admin Portal';
+            case 'accountant': return 'Accountant Portal';
+            case 'librarian': return 'Library Portal';
+            case 'receptionist': return 'Reception Portal';
             default: return 'Dashboard';
         }
     };
@@ -172,7 +245,7 @@ const DashboardLayout = () => {
                         </button>
 
                         {/* Profile Dropdown */}
-                        <div className="profile-dropdown">
+                        <div className="profile-dropdown" ref={dropdownRef}>
                             <button
                                 className="profile-btn"
                                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}

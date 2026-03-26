@@ -139,24 +139,46 @@ const updateTeacher = asyncHandler(async (req, res) => {
         });
     }
 
-    const allowedUpdates = ['specialization', 'qualification'];
+    const allowedUpdates = ['specialization', 'qualification', 'experience', 'joiningDate', 'gender'];
 
     // Admin can update more fields
     if (req.user.role === 'admin') {
-        allowedUpdates.push('department', 'designation', 'subjects', 'assignedClasses', 'salary', 'isActive');
+        allowedUpdates.push('department', 'designation', 'subjects', 'assignedClasses', 'salary', 'isActive', 'employeeId');
     }
 
-    const updates = {};
+    // Update Teacher model fields
+    const teacherUpdates = {};
     for (const key of allowedUpdates) {
         if (req.body[key] !== undefined) {
-            updates[key] = req.body[key];
+            teacherUpdates[key] = req.body[key];
         }
     }
 
-    teacher = await Teacher.findByIdAndUpdate(req.params.id, updates, {
+    // Update User model fields (admin only)
+    if (req.user.role === 'admin') {
+        const userUpdates = {};
+        const allowedUserUpdates = ['firstName', 'lastName', 'phone'];
+
+        for (const key of allowedUserUpdates) {
+            if (req.body[key] !== undefined) {
+                userUpdates[key] = req.body[key];
+            }
+        }
+
+        // Update User if there are user fields to update
+        if (Object.keys(userUpdates).length > 0) {
+            await User.findByIdAndUpdate(teacher.user, userUpdates, {
+                new: true,
+                runValidators: true,
+            });
+        }
+    }
+
+    // Update Teacher model
+    teacher = await Teacher.findByIdAndUpdate(req.params.id, teacherUpdates, {
         new: true,
         runValidators: true,
-    }).populate('user', 'firstName lastName email');
+    }).populate('user', 'firstName lastName email phone');
 
     res.json({
         success: true,

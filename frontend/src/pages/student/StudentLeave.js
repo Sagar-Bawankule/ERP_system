@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiCalendar, FiPlus, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext';
 import { leaveService } from '../../services/api';
 import './StudentPages.css';
 
 const StudentLeave = () => {
-    const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
     const [leaves, setLeaves] = useState([]);
     const [showForm, setShowForm] = useState(false);
@@ -17,11 +15,16 @@ const StudentLeave = () => {
         reason: '',
     });
 
-    useEffect(() => {
-        fetchLeaves();
+    const setDemoData = useCallback(() => {
+        setLeaves([
+            { _id: '1', leaveType: 'Sick Leave', fromDate: new Date('2024-12-10'), toDate: new Date('2024-12-11'), numberOfDays: 2, reason: 'Fever and cold', status: 'Approved', reviewRemarks: 'Get well soon', createdAt: new Date('2024-12-09') },
+            { _id: '2', leaveType: 'Personal', fromDate: new Date('2024-11-25'), toDate: new Date('2024-11-25'), numberOfDays: 1, reason: 'Family function', status: 'Approved', createdAt: new Date('2024-11-20') },
+            { _id: '3', leaveType: 'Medical', fromDate: new Date('2024-12-20'), toDate: new Date('2024-12-22'), numberOfDays: 3, reason: 'Medical checkup', status: 'Pending', createdAt: new Date('2024-12-15') },
+        ]);
+        setLoading(false);
     }, []);
 
-    const fetchLeaves = async () => {
+    const fetchLeaves = useCallback(async () => {
         try {
             const res = await leaveService.getMyLeaves();
             setLeaves(res.data.data || []);
@@ -29,16 +32,11 @@ const StudentLeave = () => {
             setDemoData();
         }
         setLoading(false);
-    };
+    }, [setDemoData]);
 
-    const setDemoData = () => {
-        setLeaves([
-            { _id: '1', leaveType: 'Sick Leave', fromDate: new Date('2024-12-10'), toDate: new Date('2024-12-11'), numberOfDays: 2, reason: 'Fever and cold', status: 'Approved', reviewRemarks: 'Get well soon', createdAt: new Date('2024-12-09') },
-            { _id: '2', leaveType: 'Personal', fromDate: new Date('2024-11-25'), toDate: new Date('2024-11-25'), numberOfDays: 1, reason: 'Family function', status: 'Approved', createdAt: new Date('2024-11-20') },
-            { _id: '3', leaveType: 'Medical', fromDate: new Date('2024-12-20'), toDate: new Date('2024-12-22'), numberOfDays: 3, reason: 'Medical checkup', status: 'Pending', createdAt: new Date('2024-12-15') },
-        ]);
-        setLoading(false);
-    };
+    useEffect(() => {
+        fetchLeaves();
+    }, [fetchLeaves]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

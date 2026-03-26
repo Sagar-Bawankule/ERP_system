@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiSave, FiEdit2, FiCheck, FiX, FiUsers, FiBook, FiFileText } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiEdit2, FiCheck, FiX, FiUsers, FiBook, FiFileText } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
@@ -17,63 +17,7 @@ const TeacherMarks = () => {
     const [loadingAssignments, setLoadingAssignments] = useState(true);
 
     // Fetch teacher's teaching assignments on mount
-    useEffect(() => {
-        fetchMyAssignments();
-    }, []);
-
-    // Fetch students when assignment is selected
-    useEffect(() => {
-        if (selectedAssignment) {
-            fetchStudentsAndMarks();
-        } else {
-            setStudents([]);
-            setMarksData({});
-        }
-    }, [selectedAssignment, selectedExam]);
-
-    // Update max marks based on exam type and subject config
-    useEffect(() => {
-        const subjectMaxMarks = selectedAssignment?.subjectId?.maxMarks;
-        if (subjectMaxMarks) {
-            switch (selectedExam) {
-                case 'Internal 1':
-                case 'Internal 2':
-                    setMaxMarks(subjectMaxMarks.internal || 20);
-                    break;
-                case 'Mid Term':
-                    setMaxMarks(50);
-                    break;
-                case 'End Term':
-                    setMaxMarks(subjectMaxMarks.theory || 80);
-                    break;
-                case 'Practical':
-                    setMaxMarks(subjectMaxMarks.practical || 20);
-                    break;
-                default:
-                    setMaxMarks(20);
-            }
-        } else {
-            switch (selectedExam) {
-                case 'Internal 1':
-                case 'Internal 2':
-                    setMaxMarks(20);
-                    break;
-                case 'Mid Term':
-                    setMaxMarks(50);
-                    break;
-                case 'End Term':
-                    setMaxMarks(100);
-                    break;
-                case 'Practical':
-                    setMaxMarks(20);
-                    break;
-                default:
-                    setMaxMarks(20);
-            }
-        }
-    }, [selectedExam, selectedAssignment]);
-
-    const fetchMyAssignments = async () => {
+    const fetchMyAssignments = useCallback(async () => {
         setLoadingAssignments(true);
         try {
             const res = await api.get('/teaching-assignments/my-assignments');
@@ -83,9 +27,9 @@ const TeacherMarks = () => {
             toast.error('Failed to load your teaching assignments');
         }
         setLoadingAssignments(false);
-    };
+    }, []);
 
-    const fetchStudentsAndMarks = async () => {
+    const fetchStudentsAndMarks = useCallback(async () => {
         if (!selectedAssignment) return;
 
         setLoading(true);
@@ -137,7 +81,63 @@ const TeacherMarks = () => {
             setStudents([]);
         }
         setLoading(false);
-    };
+    }, [selectedAssignment, selectedExam, maxMarks]);
+
+    useEffect(() => {
+        fetchMyAssignments();
+    }, [fetchMyAssignments]);
+
+    // Fetch students when assignment is selected
+    useEffect(() => {
+        if (selectedAssignment) {
+            fetchStudentsAndMarks();
+        } else {
+            setStudents([]);
+            setMarksData({});
+        }
+    }, [selectedAssignment, selectedExam, fetchStudentsAndMarks]);
+
+    // Update max marks based on exam type and subject config
+    useEffect(() => {
+        const subjectMaxMarks = selectedAssignment?.subjectId?.maxMarks;
+        if (subjectMaxMarks) {
+            switch (selectedExam) {
+                case 'Internal 1':
+                case 'Internal 2':
+                    setMaxMarks(subjectMaxMarks.internal || 20);
+                    break;
+                case 'Mid Term':
+                    setMaxMarks(50);
+                    break;
+                case 'End Term':
+                    setMaxMarks(subjectMaxMarks.theory || 80);
+                    break;
+                case 'Practical':
+                    setMaxMarks(subjectMaxMarks.practical || 20);
+                    break;
+                default:
+                    setMaxMarks(20);
+            }
+        } else {
+            switch (selectedExam) {
+                case 'Internal 1':
+                case 'Internal 2':
+                    setMaxMarks(20);
+                    break;
+                case 'Mid Term':
+                    setMaxMarks(50);
+                    break;
+                case 'End Term':
+                    setMaxMarks(100);
+                    break;
+                case 'Practical':
+                    setMaxMarks(20);
+                    break;
+                default:
+                    setMaxMarks(20);
+            }
+        }
+    }, [selectedExam, selectedAssignment]);
 
     const handleMarksChange = (studentId, value) => {
         const numValue = parseInt(value) || 0;

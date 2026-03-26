@@ -142,6 +142,26 @@ export const parentService = {
     markNotificationRead: (id) => api.put(`/parents/notifications/${id}/read`),
 };
 
+export const noticeService = {
+    // For all users - personal notice access
+    getMyNotices: (params) => api.get('/notices/my-notices', { params }),
+    getById: (id) => api.get(`/notices/${id}`),
+    markAsRead: (id, data) => api.put(`/notices/${id}/read`, data),
+    getUnreadCount: () => api.get('/notices/unread-count'),
+
+    // For authorized users - notice management
+    create: (data) => api.post('/notices', data),
+    getAll: (params) => api.get('/notices', { params }),
+    update: (id, data) => api.put(`/notices/${id}`, data),
+    delete: (id) => api.delete(`/notices/${id}`),
+    getAnalytics: (id) => api.get(`/notices/${id}/analytics`),
+
+    // File upload for attachments
+    uploadAttachment: (data) => api.post('/notices/attachments', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    })
+};
+
 export const adminService = {
     getDashboard: () => api.get('/admin/dashboard'),
     getUsers: (params) => api.get('/admin/users', { params }),
@@ -153,6 +173,47 @@ export const adminService = {
     sendNotification: (data) => api.post('/admin/notifications', data),
     getReports: (params) => api.get('/admin/reports', { params }),
     bulkAssignFees: (data) => api.post('/admin/fees/bulk-assign', data),
+};
+
+export const superAdminService = {
+    getDashboard: () => api.get('/super-admin/dashboard'),
+    getUsers: (params) => api.get('/super-admin/users', { params }),
+    createUser: (data) => api.post('/super-admin/users', data),
+    updateUserRole: (id, data) => api.put(`/super-admin/users/${id}/role`, data),
+    toggleUserStatus: (id) => api.put(`/super-admin/users/${id}/status`),
+    deleteUser: (id) => api.delete(`/super-admin/users/${id}`),
+    getRoles: () => api.get('/super-admin/roles'),
+};
+
+export const libraryService = {
+    getDashboard: () => api.get('/library/dashboard'),
+    getBooks: (params) => api.get('/library/books', { params }),
+    addBook: (data) => api.post('/library/books', data),
+    updateBook: (id, data) => api.put(`/library/books/${id}`, data),
+    deleteBook: (id) => api.delete(`/library/books/${id}`),
+    getEligibleUsers: (params) => api.get('/library/eligible-users', { params }),
+    getIssues: (params) => api.get('/library/issues', { params }),
+    issueBook: (data) => api.post('/library/issue', data),
+    returnBook: (issueId) => api.put(`/library/return/${issueId}`),
+};
+
+export const frontOfficeService = {
+    getDashboard: () => api.get('/front-office/dashboard'),
+    getEntries: (params) => api.get('/front-office', { params }),
+    createEntry: (data) => api.post('/front-office', data),
+    updateEntry: (id, data) => api.put(`/front-office/${id}`, data),
+    deleteEntry: (id) => api.delete(`/front-office/${id}`),
+    checkoutVisitor: (id) => api.put(`/front-office/${id}/checkout`),
+};
+
+export const accountantService = {
+    getDashboard: () => api.get('/accountant/dashboard'),
+    getIncome: (params) => api.get('/accountant/income', { params }),
+    addIncome: (data) => api.post('/accountant/income', data),
+    deleteIncome: (id) => api.delete(`/accountant/income/${id}`),
+    getExpenses: (params) => api.get('/accountant/expenses', { params }),
+    addExpense: (data) => api.post('/accountant/expenses', data),
+    deleteExpense: (id) => api.delete(`/accountant/expenses/${id}`),
 };
 
 export const collegeService = {

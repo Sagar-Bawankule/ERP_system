@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiUser, FiSearch, FiMail, FiPhone, FiCalendar, FiEye, FiUsers } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiUser, FiSearch, FiMail, FiPhone, FiEye, FiUsers } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
@@ -12,28 +12,16 @@ const TeacherStudents = () => {
     const [selectedClass, setSelectedClass] = useState('');
     const [selectedStudent, setSelectedStudent] = useState(null);
 
-    useEffect(() => {
-        fetchSubjects();
-    }, []);
-
-    useEffect(() => {
-        if (selectedClass) {
-            fetchStudents();
-        } else {
-            fetchAllStudents();
-        }
-    }, [selectedClass]);
-
-    const fetchSubjects = async () => {
+    const fetchSubjects = useCallback(async () => {
         try {
             const res = await api.get('/subjects');
             setSubjects(res.data.data || []);
         } catch (error) {
             console.error('Error fetching subjects:', error);
         }
-    };
+    }, []);
 
-    const fetchAllStudents = async () => {
+    const fetchAllStudents = useCallback(async () => {
         setLoading(true);
         try {
             const res = await api.get('/students');
@@ -56,9 +44,9 @@ const TeacherStudents = () => {
             setStudents([]);
         }
         setLoading(false);
-    };
+    }, []);
 
-    const fetchStudents = async () => {
+    const fetchStudents = useCallback(async () => {
         setLoading(true);
         try {
             const [department, semester, section] = selectedClass.split('-');
@@ -89,19 +77,25 @@ const TeacherStudents = () => {
             setStudents([]);
         }
         setLoading(false);
-    };
+    }, [selectedClass]);
+
+    useEffect(() => {
+        fetchSubjects();
+    }, [fetchSubjects]);
+
+    useEffect(() => {
+        if (selectedClass) {
+            fetchStudents();
+        } else {
+            fetchAllStudents();
+        }
+    }, [selectedClass, fetchStudents, fetchAllStudents]);
 
     const filteredStudents = students.filter(student =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    const getAttendanceClass = (attendance) => {
-        if (attendance >= 85) return 'badge-success';
-        if (attendance >= 75) return 'badge-warning';
-        return 'badge-error';
-    };
 
     // Generate class options
     const classOptions = [...new Set(subjects.map(s => `${s.department}-${s.semester}-A`))];

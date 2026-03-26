@@ -389,6 +389,75 @@ const markNotificationRead = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Update parent profile
+// @route   PUT /api/parents/:id
+// @access  Private (Admin, Parent-own)
+const updateParent = asyncHandler(async (req, res) => {
+    let parent = await Parent.findById(req.params.id);
+
+    if (!parent) {
+        return res.status(404).json({
+            success: false,
+            message: 'Parent not found',
+        });
+    }
+
+    // Check authorization
+    if (req.user.role === 'parent' && parent.user.toString() !== req.user.id) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized to update this profile',
+        });
+    }
+
+    const allowedUpdates = ['relation', 'occupation', 'annualIncome'];
+
+    // Admin can update more fields
+    if (req.user.role === 'admin') {
+        allowedUpdates.push('students', 'isActive');
+    }
+
+    // Update Parent model fields
+    const parentUpdates = {};
+    for (const key of allowedUpdates) {
+        if (req.body[key] !== undefined) {
+            parentUpdates[key] = req.body[key];
+        }
+    }
+
+    // Update User model fields (admin only)
+    if (req.user.role === 'admin') {
+        const userUpdates = {};
+        const allowedUserUpdates = ['firstName', 'lastName', 'phone'];
+
+        for (const key of allowedUserUpdates) {
+            if (req.body[key] !== undefined) {
+                userUpdates[key] = req.body[key];
+            }
+        }
+
+        // Update User if there are user fields to update
+        if (Object.keys(userUpdates).length > 0) {
+            await User.findByIdAndUpdate(parent.user, userUpdates, {
+                new: true,
+                runValidators: true,
+            });
+        }
+    }
+
+    // Update Parent model
+    parent = await Parent.findByIdAndUpdate(req.params.id, parentUpdates, {
+        new: true,
+        runValidators: true,
+    }).populate('user', 'firstName lastName email phone');
+
+    res.json({
+        success: true,
+        message: 'Parent updated successfully',
+        data: parent,
+    });
+});
+
 // @desc    Link student to parent
 // @route   POST /api/parents/:id/link-student
 // @access  Private (Admin)
@@ -430,6 +499,7 @@ module.exports = {
     getAllParents,
     createParent,
     getParent,
+    updateParent,
     getWardDashboard,
     getWardAttendance,
     getWardFees,

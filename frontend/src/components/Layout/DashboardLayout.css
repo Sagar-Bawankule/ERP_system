@@ -354,6 +354,7 @@
     border: 1px solid var(--border-color);
     padding: var(--spacing-2);
     animation: slideUp 0.2s ease-out;
+    z-index: 1000;
 }
 
 .dropdown-item {

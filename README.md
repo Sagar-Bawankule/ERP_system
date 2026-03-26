@@ -3,49 +3,58 @@
 ## Educational ERP System for Samarth Rural Educational Institute
 ### SAMARTH COLLEGE OF ENGINEERING & MANAGEMENT, BELHE
 
-A comprehensive full-stack Educational ERP System with centralized platform for managing academic, administrative, and financial operations.
-
-> **📱 Now Available as Mobile App!** - Android APK ready for download. See [Mobile App Guide](#-mobile-app) below.
+A comprehensive full-stack Educational ERP System providing a centralized platform for managing academic, administrative, financial, library, and front-office operations — with role-based access for 8 different user types.
 
 ---
 
 ## 🌟 Features
 
-### User Roles
-- **Admin** - Complete system management, analytics, and reporting
-- **Teacher** - Attendance marking, marks entry, notes upload
-- **Student** - View attendance, fees, marks, download notes
-- **Parent** - Monitor ward's academic progress
+### 👥 User Roles (8 Roles)
+| Role | Description |
+|------|-------------|
+| 🛡️ **Super Admin** | Full system control — manage all users, roles, and modules |
+| 👨‍💼 **Admin** | College administration — students, teachers, fees, reports |
+| 👨‍🏫 **Teacher** | Attendance marking, marks entry, notes upload |
+| 🎓 **Student** | View attendance, fees, marks, download study materials |
+| 👨‍👩‍👧 **Parent** | Monitor ward's academic progress and fee status |
+| 💰 **Accountant** | Manage income, expenses, fee collection, financial reports |
+| 📚 **Librarian** | Book management, issue/return tracking, fine calculation |
+| 🏢 **Receptionist** | Front office — visitors, inquiries, calls, complaints |
 
-### Core Modules
-- 📊 **Dashboard** - Role-based dashboards with analytics
-- 📅 **Attendance Management** - Mark and track attendance
-- 💰 **Fee Management** - Fee structures, payments, receipts
-- 📚 **Marks & Results** - Enter marks, view results, backlogs
-- 📝 **Notes/Study Materials** - Upload and download resources
-- 🏆 **Scholarships** - Manage and apply for scholarships
-- 📋 **Leave Applications** - Apply and approve leaves
-- 🖼️ **College Gallery** - Manage campus images
+### 📦 Core Modules
+- 📊 **Dashboards** — Role-specific dashboards with live analytics
+- 📅 **Attendance Management** — Mark and track student attendance
+- 💰 **Fee Management** — Fee structures, payments, receipts
+- 📚 **Marks & Results** — Marks entry, grade calculation, result reports
+- 📝 **Study Materials** — Upload and download notes and assignments
+- 🏆 **Scholarships** — Manage and apply for scholarships
+- 📋 **Leave Applications** — Apply and approve leave requests
+- 🖼️ **College Gallery** — Manage campus images
+- 📚 **Library Management** — Books, issue/return, overdue fines
+- 🏢 **Front Office** — Visitor logs, admission inquiries, call records
+- 💵 **Income & Expense Tracking** — Financial ledger management
+- 🛡️ **User Management** — Create, disable, and manage all system users
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- Node.js with Express.js
-- MongoDB with Mongoose ODM
-- JWT Authentication
-- Role-Based Access Control (RBAC)
-- Multer for file uploads
-- PDFKit for receipt generation
+- **Node.js** with Express.js
+- **MongoDB** with Mongoose ODM
+- **JWT** Authentication
+- **Role-Based Access Control (RBAC)** — centralized `roles.js` config
+- **Multer** for file uploads
+- **PDFKit** for receipt generation
+- **Bcrypt.js** for password hashing
 
 ### Frontend
-- React 18
-- React Router v6
-- Chart.js for analytics
-- React Toastify for notifications
-- Modern CSS with CSS Variables
-- **Capacitor 8** - Native mobile app support
+- **React 18**
+- **React Router v6** — protected, role-based routing
+- **Chart.js / Recharts** for analytics
+- **React Toastify** for notifications
+- **React Icons** for UI icons
+- **Modern CSS** with CSS Variables & dark-mode support
 
 ---
 
@@ -54,30 +63,71 @@ A comprehensive full-stack Educational ERP System with centralized platform for 
 ```
 ERP_system/
 ├── backend/
-│   ├── config/           # Database & Cloudinary config
-│   ├── controllers/      # Route controllers
-│   ├── middleware/       # Auth, error handling, uploads
-│   ├── models/           # Mongoose schemas
-│   ├── routes/           # API routes
-│   ├── seeders/          # Database seeders
-│   ├── uploads/          # Uploaded files
-│   ├── server.js         # Express server
+│   ├── config/
+│   │   ├── db.js               # MongoDB connection
+│   │   └── roles.js            # RBAC — roles, modules, permissions
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── adminController.js
+│   │   ├── studentController.js
+│   │   ├── teacherController.js
+│   │   ├── superAdminController.js   # NEW
+│   │   ├── accountantController.js   # NEW
+│   │   ├── libraryController.js      # NEW
+│   │   └── frontOfficeController.js  # NEW
+│   ├── middleware/
+│   │   ├── auth.js             # protect, authorize, checkPermission
+│   │   ├── errorHandler.js     # asyncHandler, errorHandler
+│   │   └── upload.js           # Multer file upload
+│   ├── models/
+│   │   ├── User.js             # 8 roles supported
+│   │   ├── Student.js
+│   │   ├── Teacher.js
+│   │   ├── Parent.js
+│   │   ├── Book.js             # NEW — Book + BookIssue
+│   │   ├── FrontOffice.js      # NEW
+│   │   ├── Income.js           # NEW
+│   │   ├── Expense.js          # NEW
+│   │   └── ...more
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── adminRoutes.js
+│   │   ├── superAdminRoutes.js       # NEW
+│   │   ├── libraryRoutes.js          # NEW
+│   │   ├── frontOfficeRoutes.js      # NEW
+│   │   └── accountantRoutes.js       # NEW
+│   ├── seeders/
+│   │   └── seedData.js         # Seeds all 8 role demo users
+│   ├── uploads/                # Uploaded files
+│   ├── server.js               # Express entry point
 │   └── package.json
 │
 ├── frontend/
-│   ├── android/          # Android mobile app (Capacitor)
-│   ├── public/           # Static assets
+│   ├── public/
 │   ├── src/
-│   │   ├── components/   # Reusable components
-│   │   ├── context/      # React context (Auth)
-│   │   ├── pages/        # Page components
-│   │   ├── services/     # API services
-│   │   ├── App.js        # Main app component
-│   │   └── index.css     # Global styles
-│   ├── capacitor.config.ts
+│   │   ├── components/
+│   │   │   ├── Layout/
+│   │   │   │   ├── DashboardLayout.js  # Role-based sidebar nav
+│   │   │   │   └── MainLayout.js
+│   │   │   └── ProtectedRoute.js
+│   │   ├── context/
+│   │   │   └── AuthContext.js          # Auth + dashboard routing
+│   │   ├── pages/
+│   │   │   ├── auth/           # Login page (8 role selectors)
+│   │   │   ├── admin/          # Admin panel pages
+│   │   │   ├── teacher/        # Teacher panel pages
+│   │   │   ├── student/        # Student panel pages
+│   │   │   ├── parent/         # Parent panel pages
+│   │   │   ├── superadmin/     # NEW — Super Admin pages
+│   │   │   ├── accountant/     # NEW — Accountant pages
+│   │   │   ├── librarian/      # NEW — Librarian pages
+│   │   │   └── receptionist/   # NEW — Receptionist pages
+│   │   ├── services/
+│   │   │   └── api.js          # All API service functions
+│   │   ├── App.js              # Routes for all 8 role panels
+│   │   └── index.css           # Global styles
 │   └── package.json
 │
-├── MOBILE_APP_GUIDE.md   # Mobile app build instructions
 └── README.md
 ```
 
@@ -89,21 +139,19 @@ ERP_system/
 - Node.js (v16 or higher)
 - MongoDB (local or Atlas)
 - npm or yarn
-- **For Mobile App**: Android Studio + JDK 11+
 
-### Backend Setup
+### 1. Backend Setup
 
-1. Navigate to backend directory:
 ```bash
+# Navigate to backend
 cd backend
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
+
+# Configure environment — create a .env file:
 ```
 
-3. Configure environment variables in `.env`:
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/ERP_system
@@ -112,31 +160,24 @@ JWT_EXPIRE=7d
 FRONTEND_URL=http://localhost:3000
 ```
 
-4. Seed the database (optional):
 ```bash
-cd seeders
-node seedData.js
-```
+# Seed the database with all 8 demo users
+node seeders/seedData.js
 
-5. Start the server:
-```bash
+# Start backend server
 npm run dev
 ```
 
-### Frontend Setup (Web)
+### 2. Frontend Setup
 
-1. Navigate to frontend directory:
 ```bash
+# Navigate to frontend
 cd frontend
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Start the development server:
-```bash
+# Start development server
 npm start
 ```
 
@@ -144,107 +185,77 @@ The web app will open at `http://localhost:3000`
 
 ---
 
-## 📱 Mobile App
+## 🔐 Demo Login Credentials
 
-### Quick Start
+> Use these after running the seeder (`node seeders/seedData.js`)
 
-The ERP system is now available as a native Android mobile app!
-
-**Build Mobile App**:
-```bash
-cd frontend
-npm run build:mobile
-npm run open:android
-```
-
-Then build APK in Android Studio:
-- **Build** → **Build Bundle(s) / APK(s)** → **Build APK(s)**
-
-### Complete Guide
-
-For detailed instructions on building, configuring, and deploying the mobile app, see:
-
-📖 **[MOBILE_APP_GUIDE.md](./MOBILE_APP_GUIDE.md)**
-
-The guide covers:
-- Setting up Android Studio
-- Configuring backend URL (ngrok or deployed server)
-- Building APK for testing
-- Signing APK for Play Store
-- Troubleshooting common issues
-- Complete testing checklist
-
-### Mobile App Features
-
-The mobile app includes **all web features**:
-- ✅ Same backend and database
-- ✅ All user roles (Admin, Teacher, Student, Parent)
-- ✅ All dashboards and functionality
-- ✅ File upload/download
-- ✅ Responsive mobile UI
-- ✅ Native performance
-
-**App Details**:
-- **Package ID**: `com.samarthcollege.erp`
-- **Name**: Samarth College ERP
-- **Platform**: Android (iOS can be added)
-- **Min SDK**: Android 5.0 (API 21)
+| Role | Email | Password |
+|------|-------|----------|
+| 🛡️ Super Admin | `superadmin@samarthcollege.edu.in` | `superadmin123` |
+| 👨‍💼 Admin | `admin@samarthcollege.edu.in` | `admin123` |
+| 👨‍🏫 Teacher | `teacher1@samarthcollege.edu.in` | `teacher123` |
+| 🎓 Student | `student1@samarthcollege.edu.in` | `student123` |
+| 👨‍👩‍👧 Parent | `parent1@gmail.com` | `parent123` |
+| 💰 Accountant | `accountant@samarthcollege.edu.in` | `accountant123` |
+| 📚 Librarian | `librarian@samarthcollege.edu.in` | `librarian123` |
+| 🏢 Receptionist | `receptionist@samarthcollege.edu.in` | `receptionist123` |
 
 ---
-
 
 ## 📡 API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user
-- `PUT /api/auth/profile` - Update profile
+- `POST /api/auth/register` — Register new user
+- `POST /api/auth/login` — Login user
+- `GET /api/auth/me` — Get current user
+- `PUT /api/auth/profile` — Update profile
 
-### Students
-- `GET /api/students` - Get all students
-- `POST /api/students` - Create student
-- `GET /api/students/:id` - Get student by ID
+### Super Admin
+- `GET /api/super-admin/dashboard` — System-wide analytics
+- `GET /api/super-admin/users` — All users (filterable by role)
+- `POST /api/super-admin/users` — Create user
+- `PUT /api/super-admin/users/:id/role` — Change user role
+- `PUT /api/super-admin/users/:id/status` — Toggle active/inactive
+- `DELETE /api/super-admin/users/:id` — Delete user
+- `GET /api/super-admin/roles` — RBAC config
 
-### Teachers
-- `GET /api/teachers` - Get all teachers
-- `POST /api/teachers` - Create teacher
+### Library
+- `GET /api/library/dashboard` — Library stats
+- `GET /api/library/books` — All books
+- `POST /api/library/books` — Add book
+- `PUT /api/library/books/:id` — Update book
+- `DELETE /api/library/books/:id` — Delete book
+- `GET /api/library/issues` — All issue/return records
+- `POST /api/library/issue` — Issue a book
+- `PUT /api/library/return/:id` — Return a book
 
-### Attendance
-- `POST /api/attendance/mark` - Mark attendance
-- `GET /api/attendance/student/:id` - Get student attendance
+### Front Office
+- `GET /api/front-office/dashboard` — Front office stats
+- `GET /api/front-office` — All entries (filterable by type)
+- `POST /api/front-office` — Create entry
+- `PUT /api/front-office/:id/checkout` — Check out visitor
+- `DELETE /api/front-office/:id` — Delete entry
 
-### Fees
-- `GET /api/fees/structures` - Get fee structures
-- `POST /api/fees/payment` - Make payment
+### Accountant
+- `GET /api/accountant/dashboard` — Financial dashboard
+- `GET /api/accountant/income` — Income records
+- `POST /api/accountant/income` — Add income
+- `DELETE /api/accountant/income/:id` — Delete income
+- `GET /api/accountant/expenses` — Expense records
+- `POST /api/accountant/expenses` — Add expense
+- `DELETE /api/accountant/expenses/:id` — Delete expense
 
-### And many more...
-
----
-
-## 📱 Platform Availability
-
-| Platform | Status | Link |
-|----------|--------|------|
-| 🌐 Web App | ✅ Live | `http://localhost:3000` |
-| 📱 Android App | ✅ Ready | Build APK (see guide) |
-| 🍎 iOS App | 🔜 Coming Soon | Requires Mac + Xcode |
+### Students, Teachers, Attendance, Fees, Marks, Notes...
+> See individual route files in `backend/routes/` for full endpoint list.
 
 ---
 
 ## 🚀 Deployment
 
 ### Web Application
-- Frontend: Deploy to Vercel, Netlify, or Render
-- Backend: Deploy to Render, Railway, or Heroku
-- Database: MongoDB Atlas (recommended)
-
-### Mobile Application
-- Build signed APK using Android Studio
-- Upload to Google Play Store
-- Follow Play Store publishing guidelines
-
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed instructions.
+- **Frontend:** Deploy to Vercel, Netlify, or Render
+- **Backend:** Deploy to Render, Railway, or Heroku
+- **Database:** MongoDB Atlas (recommended)
 
 ---
 
@@ -256,21 +267,13 @@ This project is proprietary software for Samarth Rural Educational Institute.
 
 ## 👨‍💻 Developer
 
-Built with ❤️ for Samarth College of Engineering & Management, Belhe
+Built with ❤️ for **Samarth College of Engineering & Management, Belhe**
 
 ---
 
 ## 🤝 Support
 
-For support, email: support@samarthcollege.edu.in
-
----
-
-## 📚 Additional Documentation
-
-- [SETUP_GUIDE.md](./SETUP_GUIDE.md) - **Complete setup instructions for new developers**
-- [MOBILE_APP_GUIDE.md](./MOBILE_APP_GUIDE.md) - Mobile app setup and build instructions
-- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Deployment instructions
+For support, email: `support@samarthcollege.edu.in`
 
 ---
 

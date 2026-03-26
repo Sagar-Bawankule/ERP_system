@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     FiBell, FiCalendar, FiDollarSign, FiBookOpen,
     FiFileText, FiCheck, FiChevronLeft, FiFilter,
@@ -14,22 +14,7 @@ const ParentNotifications = () => {
     const [filter, setFilter] = useState('all');
     const [sortOrder, setSortOrder] = useState('newest');
 
-    useEffect(() => {
-        fetchNotifications();
-    }, []);
-
-    const fetchNotifications = async () => {
-        try {
-            const res = await parentService.getNotifications();
-            setNotifications(res.data.data || []);
-        } catch (error) {
-            console.error('Error fetching notifications:', error);
-            setDemoData();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
+    const setDemoData = useCallback(() => {
         setNotifications([
             {
                 _id: '1',
@@ -96,7 +81,22 @@ const ParentNotifications = () => {
                 isRead: true
             },
         ]);
-    };
+    }, []);
+
+    const fetchNotifications = useCallback(async () => {
+        try {
+            const res = await parentService.getNotifications();
+            setNotifications(res.data.data || []);
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+            setDemoData();
+        }
+        setLoading(false);
+    }, [setDemoData]);
+
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
 
     const markAsRead = async (notificationId) => {
         try {

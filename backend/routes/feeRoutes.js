@@ -9,6 +9,7 @@ const {
     getPaymentHistory,
     getFeeAnalytics,
     updateFeeStructure,
+    getAllFees,
     getOverdueFees,
 } = require('../controllers/feeController');
 const { protect, authorize } = require('../middleware/auth');
@@ -17,6 +18,7 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect);
 
 // Admin only routes
+router.get('/', authorize('admin'), getAllFees);
 router.post('/structure', authorize('admin'), createFeeStructure);
 router.get('/structures', authorize('admin'), getFeeStructures);
 router.put('/structure/:id', authorize('admin'), updateFeeStructure);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiCalendar, FiCheck, FiX, FiClock, FiPieChart, FiChevronLeft } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { parentService } from '../../services/api';
@@ -12,17 +12,7 @@ const ParentAttendance = () => {
     const [summary, setSummary] = useState({ total: 0, present: 0, absent: 0, late: 0, percentage: 0 });
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
-    useEffect(() => {
-        fetchWardsData();
-    }, []);
-
-    useEffect(() => {
-        if (selectedWard) {
-            fetchAttendance();
-        }
-    }, [selectedWard, selectedMonth]);
-
-    const fetchWardsData = async () => {
+    const setDemoData = useCallback(async () => {
         try {
             const res = await parentService.getWardDashboard();
             const wards = res.data.data || [];
@@ -34,50 +24,9 @@ const ParentAttendance = () => {
             console.error('Error fetching wards:', error);
             setDemoData();
         }
-    };
+    }, []);
 
-    const fetchAttendance = async () => {
-        setLoading(true);
-        try {
-            const res = await parentService.getWardAttendance(selectedWard.student.id, { month: selectedMonth });
-            const attendanceData = res.data.data || [];
-            setAttendance(attendanceData);
-
-            // Calculate summary
-            const present = attendanceData.filter(a => ['Present', 'Late'].includes(a.status)).length;
-            const absent = attendanceData.filter(a => a.status === 'Absent').length;
-            const late = attendanceData.filter(a => a.status === 'Late').length;
-            const total = attendanceData.length;
-
-            setSummary({
-                total,
-                present,
-                absent,
-                late,
-                percentage: total > 0 ? Math.round((present / total) * 100) : 0
-            });
-        } catch (error) {
-            console.error('Error fetching attendance:', error);
-            setDemoAttendance();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
-        const demoWards = [{
-            student: {
-                id: 'demo-1',
-                name: 'John Smith',
-                rollNumber: 'CS2021001',
-                department: 'Computer Science',
-                semester: 5,
-            }
-        }];
-        setWardsData(demoWards);
-        setSelectedWard(demoWards[0]);
-    };
-
-    const setDemoAttendance = () => {
+    const setDemoAttendance = useCallback(() => {
         const demoAttendance = [];
         const today = new Date();
         for (let i = 25; i >= 1; i--) {
@@ -110,7 +59,58 @@ const ParentAttendance = () => {
             percentage: Math.round((present / total) * 100)
         });
         setLoading(false);
-    };
+    }, []);
+
+    const fetchWardsData = useCallback(async () => {
+        try {
+            const res = await parentService.getWardDashboard();
+            const wards = res.data.data || [];
+            setWardsData(wards);
+            if (wards.length > 0) {
+                setSelectedWard(wards[0]);
+            }
+        } catch (error) {
+            console.error('Error fetching wards:', error);
+            setDemoData();
+        }
+    }, [setDemoData]);
+
+    const fetchAttendance = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await parentService.getWardAttendance(selectedWard.student.id, { month: selectedMonth });
+            const attendanceData = res.data.data || [];
+            setAttendance(attendanceData);
+
+            // Calculate summary
+            const present = attendanceData.filter(a => ['Present', 'Late'].includes(a.status)).length;
+            const absent = attendanceData.filter(a => a.status === 'Absent').length;
+            const late = attendanceData.filter(a => a.status === 'Late').length;
+            const total = attendanceData.length;
+
+            setSummary({
+                total,
+                present,
+                absent,
+                late,
+                percentage: total > 0 ? Math.round((present / total) * 100) : 0
+            });
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+            setDemoAttendance();
+        }
+        setLoading(false);
+    }, [selectedWard, selectedMonth, setDemoAttendance]);
+
+    useEffect(() => {
+        fetchWardsData();
+    }, [fetchWardsData]);
+
+    useEffect(() => {
+        if (selectedWard) {
+            fetchAttendance();
+        }
+    }, [selectedWard, fetchAttendance]);
 
     const getStatusIcon = (status) => {
         switch (status) {

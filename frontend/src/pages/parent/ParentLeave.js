@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     FiFileText, FiCalendar, FiClock, FiCheck, FiX,
-    FiChevronLeft, FiFilter, FiEye
+    FiChevronLeft
 } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { parentService } from '../../services/api';
@@ -15,43 +15,7 @@ const ParentLeave = () => {
     const [filter, setFilter] = useState('all');
     const [selectedLeave, setSelectedLeave] = useState(null);
 
-    useEffect(() => {
-        fetchWardsData();
-    }, []);
-
-    useEffect(() => {
-        if (selectedWard) {
-            fetchLeaves();
-        }
-    }, [selectedWard]);
-
-    const fetchWardsData = async () => {
-        try {
-            const res = await parentService.getWardDashboard();
-            const wards = res.data.data || [];
-            setWardsData(wards);
-            if (wards.length > 0) {
-                setSelectedWard(wards[0]);
-            }
-        } catch (error) {
-            console.error('Error fetching wards:', error);
-            setDemoData();
-        }
-    };
-
-    const fetchLeaves = async () => {
-        setLoading(true);
-        try {
-            const res = await parentService.getWardLeaves(selectedWard.student.id);
-            setLeaves(res.data.data || []);
-        } catch (error) {
-            console.error('Error fetching leaves:', error);
-            setDemoLeaves();
-        }
-        setLoading(false);
-    };
-
-    const setDemoData = () => {
+    const setDemoData = useCallback(() => {
         const demoWards = [{
             student: {
                 id: 'demo-1',
@@ -63,9 +27,9 @@ const ParentLeave = () => {
         }];
         setWardsData(demoWards);
         setSelectedWard(demoWards[0]);
-    };
+    }, []);
 
-    const setDemoLeaves = () => {
+    const setDemoLeaves = useCallback(() => {
         setLeaves([
             {
                 _id: '1',
@@ -131,7 +95,43 @@ const ParentLeave = () => {
             },
         ]);
         setLoading(false);
-    };
+    }, []);
+
+    const fetchWardsData = useCallback(async () => {
+        try {
+            const res = await parentService.getWardDashboard();
+            const wards = res.data.data || [];
+            setWardsData(wards);
+            if (wards.length > 0) {
+                setSelectedWard(wards[0]);
+            }
+        } catch (error) {
+            console.error('Error fetching wards:', error);
+            setDemoData();
+        }
+    }, [setDemoData]);
+
+    const fetchLeaves = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await parentService.getWardLeaves(selectedWard.student.id);
+            setLeaves(res.data.data || []);
+        } catch (error) {
+            console.error('Error fetching leaves:', error);
+            setDemoLeaves();
+        }
+        setLoading(false);
+    }, [selectedWard, setDemoLeaves]);
+
+    useEffect(() => {
+        fetchWardsData();
+    }, [fetchWardsData]);
+
+    useEffect(() => {
+        if (selectedWard) {
+            fetchLeaves();
+        }
+    }, [selectedWard, fetchLeaves]);
 
     const getStatusIcon = (status) => {
         switch (status) {

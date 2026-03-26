@@ -14,6 +14,7 @@ const { Scholarship } = require('../models/Scholarship');
 const Marks = require('../models/Marks');
 const Note = require('../models/Note');
 const CollegeGallery = require('../models/CollegeGallery');
+const { Book } = require('../models/Book');
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ERP_System';
 
@@ -112,6 +113,122 @@ const seedData = async () => {
         await User.findByIdAndUpdate(parentUsers[0]._id, { parentProfile: parents[0]._id });
         await Student.findByIdAndUpdate(students[0]._id, { parentGuardian: parents[0]._id });
         console.log(`   Created ${parents.length} parents`);
+
+        // Create Super Admin
+        console.log('🛡️  Creating super admin...');
+        await User.create({
+            email: 'superadmin@samarthcollege.edu.in',
+            password: 'superadmin123',
+            role: 'super_admin',
+            firstName: 'Super',
+            lastName: 'Admin',
+            phone: '9876543200',
+            isActive: true,
+        });
+        console.log('   Created super admin user');
+
+        // Create Accountant
+        console.log('💰 Creating accountant...');
+        await User.create({
+            email: 'accountant@samarthcollege.edu.in',
+            password: 'accountant123',
+            role: 'accountant',
+            firstName: 'Meena',
+            lastName: 'Patil',
+            phone: '9876543240',
+            isActive: true,
+        });
+        console.log('   Created accountant user');
+
+        // Create Librarian
+        console.log('📚 Creating librarian...');
+        await User.create({
+            email: 'librarian@samarthcollege.edu.in',
+            password: 'librarian123',
+            role: 'librarian',
+            firstName: 'Ramesh',
+            lastName: 'Kulkarni',
+            phone: '9876543250',
+            isActive: true,
+        });
+        console.log('   Created librarian user');
+
+        // Create Receptionist
+        console.log('🏢 Creating receptionist...');
+        await User.create({
+            email: 'receptionist@samarthcollege.edu.in',
+            password: 'receptionist123',
+            role: 'receptionist',
+            firstName: 'Snehal',
+            lastName: 'More',
+            phone: '9876543260',
+            isActive: true,
+        });
+        console.log('   Created receptionist user');
+
+        // Create Sample Books
+        console.log('📚 Creating library books...');
+        const books = [
+            {
+                title: 'Introduction to Computer Science',
+                author: 'Dr. John Smith',
+                isbn: '978-0123456789',
+                publisher: 'Tech Publications',
+                category: 'Textbook',
+                department: 'Computer Engineering',
+                totalCopies: 5,
+                availableCopies: 5,
+                shelfLocation: 'CS-001',
+            },
+            {
+                title: 'Data Structures and Algorithms',
+                author: 'Dr. Sarah Johnson',
+                isbn: '978-0987654321',
+                publisher: 'Academic Press',
+                category: 'Textbook',
+                department: 'Computer Engineering',
+                totalCopies: 3,
+                availableCopies: 3,
+                shelfLocation: 'CS-002',
+            },
+            {
+                title: 'Engineering Mathematics',
+                author: 'Prof. Michael Brown',
+                isbn: '978-0456789123',
+                publisher: 'Engineering Books Ltd',
+                category: 'Reference',
+                department: 'General',
+                totalCopies: 4,
+                availableCopies: 4,
+                shelfLocation: 'GEN-001',
+            },
+            {
+                title: 'Mechanics of Materials',
+                author: 'Dr. David Wilson',
+                isbn: '978-0789123456',
+                publisher: 'Mechanical Press',
+                category: 'Textbook',
+                department: 'Mechanical Engineering',
+                totalCopies: 3,
+                availableCopies: 3,
+                shelfLocation: 'ME-001',
+            },
+            {
+                title: 'Digital Electronics',
+                author: 'Prof. Lisa Anderson',
+                isbn: '978-0321654987',
+                publisher: 'Electronics Publishers',
+                category: 'Textbook',
+                department: 'Electronics Engineering',
+                totalCopies: 2,
+                availableCopies: 2,
+                shelfLocation: 'EC-001',
+            }
+        ];
+
+        await Book.deleteMany();
+        await Book.insertMany(books);
+        console.log(`   Created ${books.length} library books`);
 
         // Create Attendance Records
         console.log('📅 Creating attendance records...');
@@ -284,24 +401,28 @@ const seedData = async () => {
         console.log('   Created gallery entries');
 
         console.log('');
-        console.log('╔══════════════════════════════════════════════════════════╗');
-        console.log('║                                                          ║');
-        console.log('║   ✅ DATABASE SEEDING COMPLETED SUCCESSFULLY!            ║');
-        console.log('║                                                          ║');
-        console.log('║   Login Credentials:                                     ║');
-        console.log('║   ─────────────────                                      ║');
-        console.log('║   Admin:   admin@samarthcollege.edu.in / admin123        ║');
-        console.log('║   Teacher: teacher1@samarthcollege.edu.in / teacher123   ║');
-        console.log('║   Student: student1@samarthcollege.edu.in / student123   ║');
-        console.log('║   Parent:  parent1@gmail.com / parent123                 ║');
-        console.log('║                                                          ║');
-        console.log('║   Sample Data Created:                                   ║');
-        console.log('║   - ' + attendanceRecords.length + ' attendance records                            ║');
-        console.log('║   - ' + marksRecords.length + ' marks records                                  ║');
-        console.log('║   - ' + feeAssignments.length + ' fee assignments                                ║');
-        console.log('║   - ' + notes.length + ' study notes                                    ║');
-        console.log('║                                                          ║');
-        console.log('╚══════════════════════════════════════════════════════════╝');
+        console.log('╔══════════════════════════════════════════════════════════════════╗');
+        console.log('║                                                                  ║');
+        console.log('║   ✅ DATABASE SEEDING COMPLETED SUCCESSFULLY!                    ║');
+        console.log('║                                                                  ║');
+        console.log('║   Login Credentials:                                             ║');
+        console.log('║   ─────────────────                                              ║');
+        console.log('║   Super Admin: superadmin@samarthcollege.edu.in / superadmin123   ║');
+        console.log('║   Admin:       admin@samarthcollege.edu.in / admin123             ║');
+        console.log('║   Teacher:     teacher1@samarthcollege.edu.in / teacher123        ║');
+        console.log('║   Student:     student1@samarthcollege.edu.in / student123        ║');
+        console.log('║   Parent:      parent1@gmail.com / parent123                     ║');
+        console.log('║   Accountant:  accountant@samarthcollege.edu.in / accountant123   ║');
+        console.log('║   Librarian:   librarian@samarthcollege.edu.in / librarian123     ║');
+        console.log('║   Receptionist: receptionist@samarthcollege.edu.in / receptionist123 ║');
+        console.log('║                                                                  ║');
+        console.log('║   Sample Data Created:                                           ║');
+        console.log('║   - ' + attendanceRecords.length + ' attendance records                                    ║');
+        console.log('║   - ' + marksRecords.length + ' marks records                                          ║');
+        console.log('║   - ' + feeAssignments.length + ' fee assignments                                        ║');
+        console.log('║   - ' + notes.length + ' study notes                                            ║');
+        console.log('║                                                                  ║');
+        console.log('╚══════════════════════════════════════════════════════════════════╝');
         console.log('');
 
         process.exit(0);

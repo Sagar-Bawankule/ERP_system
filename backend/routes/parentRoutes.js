@@ -4,6 +4,7 @@ const {
     getAllParents,
     createParent,
     getParent,
+    updateParent,
     getWardDashboard,
     getWardAttendance,
     getWardFees,
@@ -31,6 +32,7 @@ router.put('/notifications/:id/read', authorize('parent'), markNotificationRead)
 router.get('/', authorize('admin'), getAllParents);
 router.post('/', authorize('admin'), createParent);
 router.get('/:id', authorize('admin', 'parent'), getParent);
+router.put('/:id', authorize('admin', 'parent'), updateParent);
 router.post('/:id/link-student', authorize('admin'), linkStudent);
 
 module.exports = router;

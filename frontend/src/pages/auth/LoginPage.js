@@ -42,10 +42,14 @@ const LoginPage = () => {
     };
 
     const demoCredentials = [
+        { role: 'Super Admin', email: 'superadmin@samarthcollege.edu.in', password: 'superadmin123' },
         { role: 'Admin', email: 'admin@samarthcollege.edu.in', password: 'admin123' },
         { role: 'Teacher', email: 'teacher1@samarthcollege.edu.in', password: 'teacher123' },
         { role: 'Student', email: 'student1@samarthcollege.edu.in', password: 'student123' },
         { role: 'Parent', email: 'parent1@gmail.com', password: 'parent123' },
+        { role: 'Accountant', email: 'accountant@samarthcollege.edu.in', password: 'accountant123' },
+        { role: 'Librarian', email: 'librarian@samarthcollege.edu.in', password: 'librarian123' },
+        { role: 'Receptionist', email: 'receptionist@samarthcollege.edu.in', password: 'receptionist123' },
     ];
 
     const fillDemo = (role, email, password) => {
@@ -56,6 +60,8 @@ const LoginPage = () => {
     const getWelcomeMessage = () => {
         if (selectedRole) {
             switch (selectedRole) {
+                case 'Super Admin':
+                    return 'Welcome, Super Admin';
                 case 'Admin':
                     return 'Welcome Back, Administrator';
                 case 'Teacher':
@@ -64,6 +70,12 @@ const LoginPage = () => {
                     return 'Welcome Back, Student';
                 case 'Parent':
                     return 'Welcome Back, Parent';
+                case 'Accountant':
+                    return 'Welcome, Accountant';
+                case 'Librarian':
+                    return 'Welcome, Librarian';
+                case 'Receptionist':
+                    return 'Welcome, Receptionist';
                 default:
                     return 'Welcome Back';
             }
@@ -74,6 +86,8 @@ const LoginPage = () => {
     const getSubtitle = () => {
         if (selectedRole) {
             switch (selectedRole) {
+                case 'Super Admin':
+                    return 'Sign in to control the entire system';
                 case 'Admin':
                     return 'Sign in to manage the college system';
                 case 'Teacher':
@@ -82,6 +96,12 @@ const LoginPage = () => {
                     return 'Sign in to access your student portal';
                 case 'Parent':
                     return 'Sign in to monitor your ward\'s progress';
+                case 'Accountant':
+                    return 'Sign in to manage college finances';
+                case 'Librarian':
+                    return 'Sign in to manage the library';
+                case 'Receptionist':
+                    return 'Sign in to manage front office';
                 default:
                     return 'Sign in to access your dashboard';
             }
@@ -165,7 +185,7 @@ const LoginPage = () => {
                                     <span className="checkmark"></span>
                                     Remember me
                                 </label>
-                                <a href="#" className="forgot-link">Forgot Password?</a>
+                                <button type="button" className="forgot-link" style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer' }}>Forgot Password?</button>
                             </div>
 
                             <button type="submit" className="btn btn-primary w-full" disabled={loading}>

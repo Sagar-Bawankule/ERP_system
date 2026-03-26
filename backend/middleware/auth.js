@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { hasPermission, ROLES } = require('../config/roles');
 
 // Protect routes - verify JWT token
 const protect = async (req, res, next) => {
@@ -48,7 +49,7 @@ const protect = async (req, res, next) => {
     }
 };
 
-// Role-Based Access Control (RBAC)
+// Role-Based Access Control (RBAC) - check if user has one of the allowed roles
 const authorize = (...roles) => {
     return (req, res, next) => {
         if (!req.user) {
@@ -58,10 +59,36 @@ const authorize = (...roles) => {
             });
         }
 
+        // Super admin always has access
+        if (req.user.role === ROLES.SUPER_ADMIN) {
+            return next();
+        }
+
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
                 message: `Access denied. Role '${req.user.role}' is not authorized to access this resource.`,
+            });
+        }
+
+        next();
+    };
+};
+
+// Module-level permission check - checks role + module + action
+const checkPermission = (module, action) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Please login first.',
+            });
+        }
+
+        if (!hasPermission(req.user.role, module, action)) {
+            return res.status(403).json({
+                success: false,
+                message: `Access denied. You do not have '${action}' permission for '${module}'.`,
             });
         }
 
@@ -89,4 +116,4 @@ const optionalAuth = async (req, res, next) => {
     next();
 };
 
-module.exports = { protect, authorize, optionalAuth };
+module.exports = { protect, authorize, checkPermission, optionalAuth };

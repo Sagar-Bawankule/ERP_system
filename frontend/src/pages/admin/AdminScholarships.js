@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiAward, FiSearch, FiPlus, FiEdit2, FiTrash2, FiUsers, FiDollarSign, FiCalendar } from 'react-icons/fi';
+import { FiAward, FiPlus, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';

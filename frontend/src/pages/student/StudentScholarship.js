@@ -1,22 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { FiAward, FiCalendar, FiDollarSign, FiFileText, FiCheck, FiClock } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiAward, FiCalendar, FiFileText, FiCheck, FiClock } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext';
 import { scholarshipService } from '../../services/api';
 import './StudentPages.css';
 
 const StudentScholarship = () => {
-    const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
     const [scholarships, setScholarships] = useState([]);
     const [myApplications, setMyApplications] = useState([]);
     const [activeTab, setActiveTab] = useState('available');
 
-    useEffect(() => {
-        fetchData();
+    const setDemoData = useCallback(() => {
+        setScholarships([
+            { _id: '1', name: 'Merit Scholarship', type: 'Merit', amount: 25000, deadline: new Date('2025-02-28'), description: 'For students with excellent academic performance', eligibility: { minPercentage: 75 }, documentsRequired: ['Marksheet', 'Income Certificate'], academicYear: '2024-25' },
+            { _id: '2', name: 'Government EBC Scholarship', type: 'Government', amount: 30000, deadline: new Date('2025-01-31'), description: 'For economically backward class students', eligibility: { maxFamilyIncome: 800000 }, documentsRequired: ['Income Certificate', 'Caste Certificate'], academicYear: '2024-25' },
+            { _id: '3', name: 'Sports Scholarship', type: 'Sports', amount: 15000, deadline: new Date('2025-03-15'), description: 'For students excelling in sports', eligibility: { minPercentage: 60 }, documentsRequired: ['Sports Certificate'], academicYear: '2024-25' },
+        ]);
+        setMyApplications([
+            { _id: '1', scholarship: { name: 'Merit Scholarship', amount: 25000 }, status: 'Pending', appliedOn: new Date('2024-12-01') },
+        ]);
+        setLoading(false);
     }, []);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const [scholarshipsRes, applicationsRes] = await Promise.all([
                 scholarshipService.getAll(),
@@ -28,19 +34,11 @@ const StudentScholarship = () => {
             setDemoData();
         }
         setLoading(false);
-    };
+    }, [setDemoData]);
 
-    const setDemoData = () => {
-        setScholarships([
-            { _id: '1', name: 'Merit Scholarship', type: 'Merit', amount: 25000, deadline: new Date('2025-02-28'), description: 'For students with excellent academic performance', eligibility: { minPercentage: 75 }, documentsRequired: ['Marksheet', 'Income Certificate'], academicYear: '2024-25' },
-            { _id: '2', name: 'Government EBC Scholarship', type: 'Government', amount: 30000, deadline: new Date('2025-01-31'), description: 'For economically backward class students', eligibility: { maxFamilyIncome: 800000 }, documentsRequired: ['Income Certificate', 'Caste Certificate'], academicYear: '2024-25' },
-            { _id: '3', name: 'Sports Scholarship', type: 'Sports', amount: 15000, deadline: new Date('2025-03-15'), description: 'For students excelling in sports', eligibility: { minPercentage: 60 }, documentsRequired: ['Sports Certificate'], academicYear: '2024-25' },
-        ]);
-        setMyApplications([
-            { _id: '1', scholarship: { name: 'Merit Scholarship', amount: 25000 }, status: 'Pending', appliedOn: new Date('2024-12-01') },
-        ]);
-        setLoading(false);
-    };
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleApply = async (scholarshipId) => {
         try {

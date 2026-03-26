@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiBook, FiAward, FiAlertTriangle, FiTrendingUp, FiChevronLeft } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { parentService } from '../../services/api';
@@ -11,45 +11,7 @@ const ParentMarks = () => {
     const [marks, setMarks] = useState([]);
     const [summary, setSummary] = useState({ cgpa: 0, totalCredits: 0, backlogs: 0, passed: 0 });
 
-    useEffect(() => {
-        fetchWardsData();
-    }, []);
-
-    useEffect(() => {
-        if (selectedWard) {
-            fetchMarks();
-        }
-    }, [selectedWard]);
-
-    const fetchWardsData = async () => {
-        try {
-            const res = await parentService.getWardDashboard();
-            const wards = res.data.data || [];
-            setWardsData(wards);
-            if (wards.length > 0) {
-                setSelectedWard(wards[0]);
-            }
-        } catch (error) {
-            console.error('Error fetching wards:', error);
-            setDemoData();
-        }
-    };
-
-    const fetchMarks = async () => {
-        setLoading(true);
-        try {
-            const res = await parentService.getWardMarks(selectedWard.student.id);
-            const marksData = res.data.data || [];
-            setMarks(marksData);
-            calculateSummary(marksData);
-        } catch (error) {
-            console.error('Error fetching marks:', error);
-            setDemoMarks();
-        }
-        setLoading(false);
-    };
-
-    const calculateSummary = (marksData) => {
+    const calculateSummary = useCallback((marksData) => {
         const passed = marksData.filter(m => m.status === 'Pass' || (m.obtainedMarks || m.marksObtained) >= (m.maxMarks * 0.4)).length;
         const backlogs = marksData.filter(m => m.status === 'Fail' || (m.obtainedMarks || m.marksObtained) < (m.maxMarks * 0.4)).length;
         const totalCredits = marksData.reduce((sum, m) => sum + (m.subject?.credits || 0), 0);
@@ -69,9 +31,9 @@ const ParentMarks = () => {
         const cgpa = totalCreds > 0 ? (totalGradePoints / totalCreds).toFixed(2) : 0;
 
         setSummary({ cgpa, totalCredits, backlogs, passed });
-    };
+    }, []);
 
-    const setDemoData = () => {
+    const setDemoData = useCallback(() => {
         const demoWards = [{
             student: {
                 id: 'demo-1',
@@ -83,9 +45,9 @@ const ParentMarks = () => {
         }];
         setWardsData(demoWards);
         setSelectedWard(demoWards[0]);
-    };
+    }, []);
 
-    const setDemoMarks = () => {
+    const setDemoMarks = useCallback(() => {
         const demoMarks = [
             { _id: '1', subject: { name: 'Database Management Systems', code: 'CS301', credits: 4 }, examType: 'End Semester', marksObtained: 78, maxMarks: 100, grade: 'A', status: 'Pass', semester: 5, academicYear: '2024-25' },
             { _id: '2', subject: { name: 'Operating Systems', code: 'CS302', credits: 4 }, examType: 'End Semester', marksObtained: 65, maxMarks: 100, grade: 'B+', status: 'Pass', semester: 5, academicYear: '2024-25' },
@@ -98,7 +60,45 @@ const ParentMarks = () => {
         setMarks(demoMarks);
         calculateSummary(demoMarks);
         setLoading(false);
-    };
+    }, [calculateSummary]);
+
+    const fetchWardsData = useCallback(async () => {
+        try {
+            const res = await parentService.getWardDashboard();
+            const wards = res.data.data || [];
+            setWardsData(wards);
+            if (wards.length > 0) {
+                setSelectedWard(wards[0]);
+            }
+        } catch (error) {
+            console.error('Error fetching wards:', error);
+            setDemoData();
+        }
+    }, [setDemoData]);
+
+    const fetchMarks = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await parentService.getWardMarks(selectedWard.student.id);
+            const marksData = res.data.data || [];
+            setMarks(marksData);
+            calculateSummary(marksData);
+        } catch (error) {
+            console.error('Error fetching marks:', error);
+            setDemoMarks();
+        }
+        setLoading(false);
+    }, [selectedWard, calculateSummary, setDemoMarks]);
+
+    useEffect(() => {
+        fetchWardsData();
+    }, [fetchWardsData]);
+
+    useEffect(() => {
+        if (selectedWard) {
+            fetchMarks();
+        }
+    }, [selectedWard, fetchMarks]);
 
     const groupedBySemester = marks.reduce((acc, mark) => {
         const sem = mark.semester || 'Other';

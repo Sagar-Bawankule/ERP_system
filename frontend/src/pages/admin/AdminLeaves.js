@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiCheck, FiX, FiClock, FiCalendar, FiUser } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiCheck, FiX, FiCalendar, FiUser } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
@@ -9,11 +9,7 @@ const AdminLeaves = () => {
     const [leaves, setLeaves] = useState([]);
     const [filter, setFilter] = useState('Pending');
 
-    useEffect(() => {
-        fetchLeaves();
-    }, [filter]);
-
-    const fetchLeaves = async () => {
+    const fetchLeaves = useCallback(async () => {
         try {
             const res = await api.get(`/leave?status=${filter}`);
             setLeaves(res.data.data || []);
@@ -25,7 +21,11 @@ const AdminLeaves = () => {
             ]);
         }
         setLoading(false);
-    };
+    }, [filter]);
+
+    useEffect(() => {
+        fetchLeaves();
+    }, [fetchLeaves]);
 
     const handleReview = async (leaveId, status) => {
         try {

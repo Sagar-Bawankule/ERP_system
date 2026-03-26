@@ -366,6 +366,34 @@ const updateFeeStructure = asyncHandler(async (req, res) => {
 // @desc    Get overdue fees
 // @route   GET /api/fees/overdue
 // @access  Private (Admin)
+// @desc    Get all fees (for admin)
+// @route   GET /api/fees
+// @access  Private (Admin)
+const getAllFees = asyncHandler(async (req, res) => {
+    const { status, department, semester } = req.query;
+
+    const query = {};
+    if (status) query.status = status;
+
+    const fees = await Fee.find(query)
+        .populate({
+            path: 'student',
+            populate: { path: 'user', select: 'firstName lastName email phone' },
+            match: department ? { department } : {},
+        })
+        .populate('feeStructure')
+        .sort({ createdAt: -1 });
+
+    // Filter out null students if department filter was applied
+    const filteredFees = fees.filter(fee => fee.student);
+
+    res.json({
+        success: true,
+        count: filteredFees.length,
+        data: filteredFees,
+    });
+});
+
 const getOverdueFees = asyncHandler(async (req, res) => {
     const today = new Date();
 
@@ -396,5 +424,6 @@ module.exports = {
     getPaymentHistory,
     getFeeAnalytics,
     updateFeeStructure,
+    getAllFees,
     getOverdueFees,
 };

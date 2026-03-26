@@ -58,6 +58,32 @@ import AdminSubjects from './pages/admin/AdminSubjects';
 import AdminClasses from './pages/admin/AdminClasses';
 import AdminTeachingAssignments from './pages/admin/AdminTeachingAssignments';
 
+// Super Admin Pages
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+import SuperAdminUsers from './pages/superadmin/SuperAdminUsers';
+
+// Accountant Pages
+import AccountantDashboard from './pages/accountant/AccountantDashboard';
+import AccountantIncome from './pages/accountant/AccountantIncome';
+import AccountantExpenses from './pages/accountant/AccountantExpenses';
+
+// Librarian Pages
+import LibrarianDashboard from './pages/librarian/LibrarianDashboard';
+import LibrarianBooks from './pages/librarian/LibrarianBooks';
+import LibrarianIssueReturn from './pages/librarian/LibrarianIssueReturn';
+
+// Receptionist Pages
+import ReceptionistDashboard from './pages/receptionist/ReceptionistDashboard';
+import ReceptionistFrontOffice from './pages/receptionist/ReceptionistFrontOffice';
+import ReceptionistVisitors from './pages/receptionist/ReceptionistVisitors';
+import ReceptionistInquiries from './pages/receptionist/ReceptionistInquiries';
+import ReceptionistStudentInfo from './pages/receptionist/ReceptionistStudentInfo';
+
+// Notice Pages
+import NoticesDashboard from './pages/notices/NoticesDashboard';
+import CreateNotice from './pages/notices/CreateNotice';
+import NoticeDetails from './pages/notices/NoticeDetails';
+
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -87,6 +113,8 @@ function App() {
                         }>
                             <Route index element={<Navigate to="dashboard" replace />} />
                             <Route path="dashboard" element={<StudentDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
                             <Route path="attendance" element={<StudentAttendance />} />
                             <Route path="fees" element={<StudentFees />} />
                             <Route path="marks" element={<StudentMarks />} />
@@ -104,6 +132,9 @@ function App() {
                         }>
                             <Route index element={<Navigate to="dashboard" replace />} />
                             <Route path="dashboard" element={<TeacherDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/create" element={<CreateNotice />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
                             <Route path="attendance" element={<TeacherAttendance />} />
                             <Route path="marks" element={<TeacherMarks />} />
                             <Route path="notes" element={<TeacherNotes />} />
@@ -119,6 +150,8 @@ function App() {
                         }>
                             <Route index element={<Navigate to="dashboard" replace />} />
                             <Route path="dashboard" element={<ParentDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
                             <Route path="attendance" element={<ParentAttendance />} />
                             <Route path="marks" element={<ParentMarks />} />
                             <Route path="fees" element={<ParentFees />} />
@@ -129,12 +162,15 @@ function App() {
 
                         {/* Admin Dashboard Routes */}
                         <Route path="/admin" element={
-                            <ProtectedRoute allowedRoles={['admin']}>
+                            <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
                                 <DashboardLayout />
                             </ProtectedRoute>
                         }>
                             <Route index element={<Navigate to="dashboard" replace />} />
                             <Route path="dashboard" element={<AdminDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/create" element={<CreateNotice />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
                             <Route path="students" element={<AdminStudents />} />
                             <Route path="teachers" element={<AdminTeachers />} />
                             <Route path="parents" element={<AdminParents />} />
@@ -146,6 +182,73 @@ function App() {
                             <Route path="subjects" element={<AdminSubjects />} />
                             <Route path="classes" element={<AdminClasses />} />
                             <Route path="teaching-assignments" element={<AdminTeachingAssignments />} />
+                            <Route path="profile" element={<StudentProfile />} />
+                        </Route>
+
+                        {/* Super Admin Dashboard Routes */}
+                        <Route path="/super-admin" element={
+                            <ProtectedRoute allowedRoles={['super_admin']}>
+                                <DashboardLayout />
+                            </ProtectedRoute>
+                        }>
+                            <Route index element={<Navigate to="dashboard" replace />} />
+                            <Route path="dashboard" element={<SuperAdminDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/create" element={<CreateNotice />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
+                            <Route path="users" element={<SuperAdminUsers />} />
+                            <Route path="create-user" element={<SuperAdminUsers />} />
+                            <Route path="roles" element={<SuperAdminUsers />} />
+                            <Route path="profile" element={<StudentProfile />} />
+                        </Route>
+
+                        {/* Accountant Dashboard Routes */}
+                        <Route path="/accountant" element={
+                            <ProtectedRoute allowedRoles={['accountant', 'super_admin', 'admin']}>
+                                <DashboardLayout />
+                            </ProtectedRoute>
+                        }>
+                            <Route index element={<Navigate to="dashboard" replace />} />
+                            <Route path="dashboard" element={<AccountantDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
+                            <Route path="income" element={<AccountantIncome />} />
+                            <Route path="expenses" element={<AccountantExpenses />} />
+                            <Route path="fees" element={<AdminFees />} />
+                            <Route path="reports" element={<AdminReports />} />
+                            <Route path="profile" element={<StudentProfile />} />
+                        </Route>
+
+                        {/* Librarian Dashboard Routes */}
+                        <Route path="/librarian" element={
+                            <ProtectedRoute allowedRoles={['librarian', 'super_admin', 'admin']}>
+                                <DashboardLayout />
+                            </ProtectedRoute>
+                        }>
+                            <Route index element={<Navigate to="dashboard" replace />} />
+                            <Route path="dashboard" element={<LibrarianDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
+                            <Route path="books" element={<LibrarianBooks />} />
+                            <Route path="issue" element={<LibrarianIssueReturn />} />
+                            <Route path="profile" element={<StudentProfile />} />
+                        </Route>
+
+                        {/* Receptionist Dashboard Routes */}
+                        <Route path="/receptionist" element={
+                            <ProtectedRoute allowedRoles={['receptionist', 'super_admin', 'admin']}>
+                                <DashboardLayout />
+                            </ProtectedRoute>
+                        }>
+                            <Route index element={<Navigate to="dashboard" replace />} />
+                            <Route path="dashboard" element={<ReceptionistDashboard />} />
+                            <Route path="notices" element={<NoticesDashboard />} />
+                            <Route path="notices/create" element={<CreateNotice />} />
+                            <Route path="notices/:id" element={<NoticeDetails />} />
+                            <Route path="front-office" element={<ReceptionistFrontOffice />} />
+                            <Route path="visitors" element={<ReceptionistVisitors />} />
+                            <Route path="inquiries" element={<ReceptionistInquiries />} />
+                            <Route path="student-info" element={<ReceptionistStudentInfo />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
 

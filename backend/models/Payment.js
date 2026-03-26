@@ -78,6 +78,5 @@ paymentSchema.pre('save', async function (next) {
 
 // Index for faster queries
 paymentSchema.index({ student: 1, paymentDate: -1 });
-paymentSchema.index({ transactionId: 1 });
 
 module.exports = mongoose.model('Payment', paymentSchema);
