@@ -713,3 +713,106 @@
     color: var(--text-muted);
     padding: var(--spacing-2);
 }
+
+/* Fingerprint Scanner Styles */
+.fingerprint-container {
+    padding: var(--spacing-4) 0;
+}
+
+.fingerprint-sensor {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 0 auto;
+    background: var(--bg-secondary);
+    border: 3px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--primary-500);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.fingerprint-sensor.idle:hover {
+    background: white;
+    box-shadow: 0 0 25px rgba(37, 99, 235, 0.25);
+    border-color: var(--primary-300);
+}
+
+.fp-svg {
+    transition: all 0.3s ease;
+}
+
+.fingerprint-sensor.idle:hover .fp-svg {
+    transform: scale(1.1);
+}
+
+.fingerprint-sensor.scanning {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: var(--primary-500);
+    color: var(--primary-600);
+    pointer-events: none;
+    box-shadow: 0 0 30px rgba(37, 99, 235, 0.3);
+}
+
+.scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(to bottom, 
+        rgba(37, 99, 235, 0), 
+        rgba(37, 99, 235, 0.8), 
+        rgba(37, 99, 235, 0));
+    box-shadow: 0 0 15px var(--primary-500);
+    animation: scan-animation 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes scan-animation {
+    0% { transform: translateY(-20px); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(160px); opacity: 0; }
+}
+
+.fingerprint-sensor.success {
+    background: var(--success-light);
+    border-color: var(--success);
+    color: var(--success-dark);
+    pointer-events: none;
+    animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fingerprint-sensor.error {
+    background: var(--error-light);
+    border-color: var(--error);
+    color: var(--error-dark);
+    pointer-events: none;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes pop-in {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-10px); }
+    40%, 80% { transform: translateX(10px); }
+}
+
+.fingerprint-status-text {
+    text-align: center;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    height: 24px;
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+}

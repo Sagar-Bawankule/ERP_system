@@ -72,6 +72,7 @@ export const attendanceService = {
     getStudent: (studentId, params) => api.get(`/attendance/student/${studentId}`, { params }),
     getSummary: (studentId) => api.get(`/attendance/summary/${studentId}`),
     getAnalytics: (params) => api.get('/attendance/analytics', { params }),
+    markSelf: () => api.post('/attendance/self-mark'),
 };
 
 export const feeService = {

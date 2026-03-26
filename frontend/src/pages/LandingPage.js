@@ -1,12 +1,85 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiUsers, FiBook, FiAward, FiTrendingUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiArrowRight, FiUsers, FiBook, FiAward, FiTrendingUp, FiChevronLeft, FiChevronRight, FiMessageCircle, FiX, FiSend } from 'react-icons/fi';
 import { galleryService } from '../services/api';
 import './LandingPage.css';
+
+const GEMINI_API_KEY = 'AIzaSyCUWHF0WpU6XhBF9ux-65tOmSMpq6ACScI';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+const SYSTEM_CONTEXT = `You are a helpful assistant for Samarth College of Engineering & Management ERP System. 
+Answer questions about:
+- Student portal: attendance, marks, fees, study materials, leave applications, scholarships
+- Teacher portal: marking attendance, uploading notes, entering marks
+- Parent portal: monitoring ward's attendance, fees, marks
+- Admin dashboard: student management, fees, analytics
+- The college has 6 departments: Computer Engineering, Mechanical Engineering, Civil Engineering, Electrical Engineering, Electronics Engineering, Information Technology
+- The college has 2500+ students, 95% placement rate, 15+ years of excellence
+Keep answers short, friendly and helpful. If asked something unrelated to the college/ERP, politely redirect.`;
 
 const LandingPage = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [carouselImages, setCarouselImages] = useState([]);
+
+    // Chatbot state
+    const [chatOpen, setChatOpen] = useState(false);
+    const [chatMessages, setChatMessages] = useState([
+        { role: 'assistant', text: 'Hello! 👋 I am the Samarth College ERP Assistant. How can I help you today?' }
+    ]);
+    const [chatInput, setChatInput] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+    const chatEndRef = useRef(null);
+
+    useEffect(() => {
+        if (chatOpen && chatEndRef.current) {
+            chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [chatMessages, chatOpen]);
+
+    const sendChatMessage = async () => {
+        if (!chatInput.trim() || chatLoading) return;
+        const userMsg = chatInput.trim();
+        setChatInput('');
+        setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+        setChatLoading(true);
+        try {
+            const response = await fetch(GEMINI_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    system_instruction: {
+                        parts: [{ text: SYSTEM_CONTEXT }]
+                    },
+                    contents: [
+                        { parts: [{ text: userMsg }] }
+                    ],
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 512,
+                    }
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                console.error('Gemini API Error:', data);
+                setChatMessages(prev => [...prev, { role: 'assistant', text: `API Error: ${data?.error?.message || 'Unknown error'}` }]);
+            } else {
+                const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not understand that. Please try again.';
+                setChatMessages(prev => [...prev, { role: 'assistant', text: reply }]);
+            }
+        } catch (err) {
+            console.error('Chat error:', err);
+            setChatMessages(prev => [...prev, { role: 'assistant', text: 'Oops! Network error. Please check your connection.' }]);
+        }
+        setChatLoading(false);
+    };
+
+    const handleChatKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    };
 
     useEffect(() => {
         fetchCarouselImages();
@@ -225,8 +298,74 @@ const LandingPage = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Floating Chatbot */}
+            <div className="chatbot-fab" id="chatbot-fab">
+                {chatOpen && (
+                    <div className="chatbot-window" id="chatbot-window">
+                        <div className="chatbot-header">
+                            <div className="chatbot-header-info">
+                                <div className="chatbot-avatar">🤖</div>
+                                <div>
+                                    <div className="chatbot-title">ERP Assistant</div>
+                                    <div className="chatbot-subtitle">Powered by Gemini AI</div>
+                                </div>
+                            </div>
+                            <button className="chatbot-close" onClick={() => setChatOpen(false)} id="chatbot-close-btn">
+                                <FiX />
+                            </button>
+                        </div>
+                        <div className="chatbot-messages" id="chatbot-messages">
+                            {chatMessages.map((msg, i) => (
+                                <div key={i} className={`chat-bubble ${msg.role}`}>
+                                    {msg.role === 'assistant' && <span className="chat-bot-icon">🤖</span>}
+                                    <div className="chat-text">{msg.text}</div>
+                                </div>
+                            ))}
+                            {chatLoading && (
+                                <div className="chat-bubble assistant">
+                                    <span className="chat-bot-icon">🤖</span>
+                                    <div className="chat-text chat-typing">
+                                        <span></span><span></span><span></span>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={chatEndRef} />
+                        </div>
+                        <div className="chatbot-input-row">
+                            <input
+                                id="chatbot-input"
+                                className="chatbot-input"
+                                type="text"
+                                placeholder="Ask me anything..."
+                                value={chatInput}
+                                onChange={e => setChatInput(e.target.value)}
+                                onKeyDown={handleChatKeyDown}
+                                disabled={chatLoading}
+                            />
+                            <button
+                                id="chatbot-send-btn"
+                                className="chatbot-send"
+                                onClick={sendChatMessage}
+                                disabled={!chatInput.trim() || chatLoading}
+                            >
+                                <FiSend />
+                            </button>
+                        </div>
+                    </div>
+                )}
+                <button
+                    id="chatbot-toggle-btn"
+                    className={`chatbot-toggle ${chatOpen ? 'open' : ''}`}
+                    onClick={() => setChatOpen(o => !o)}
+                    title="Chat with ERP Assistant"
+                >
+                    {chatOpen ? <FiX /> : <FiMessageCircle />}
+                </button>
+            </div>
         </div>
     );
 };
 
 export default LandingPage;
+

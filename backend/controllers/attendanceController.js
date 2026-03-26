@@ -384,6 +384,62 @@ const updateAttendance = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Self mark attendance for student (Fingerprint Dummy)
+// @route   POST /api/attendance/self-mark
+// @access  Private (Student)
+const selfMarkAttendance = asyncHandler(async (req, res) => {
+    const student = await Student.findOne({ user: req.user.id });
+    if (!student) {
+        return res.status(404).json({
+            success: false,
+            message: 'Student profile not found',
+        });
+    }
+
+    // Find any subject to satisfy schema (since it's a dummy button)
+    const subject = await Subject.findOne();
+    const teacherObj = await require('../models/Teacher').findOne();
+
+    if (!subject || !teacherObj) {
+        return res.status(400).json({
+            success: false,
+            message: 'System setup incomplete. Cannot mark attendance.',
+        });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Upsert attendance record
+    const attendance = await Attendance.findOneAndUpdate(
+        {
+            student: student._id,
+            subject: subject._id,
+            date: today,
+            lectureNumber: 1,
+        },
+        {
+            student: student._id,
+            subject: subject._id,
+            teacher: teacherObj._id,
+            date: today,
+            status: 'Present',
+            lectureNumber: 1,
+            remarks: 'Self Marked via Fingerprint Dummy',
+            semester: student.semester || 1,
+            department: student.department || 'General',
+            section: student.section || 'A',
+        },
+        { upsert: true, new: true }
+    );
+
+    res.status(201).json({
+        success: true,
+        message: 'Attendance marked successfully via Fingerprint!',
+        data: attendance,
+    });
+});
+
 module.exports = {
     markAttendance,
     getClassAttendance,
@@ -391,4 +447,5 @@ module.exports = {
     getAttendanceSummary,
     getAttendanceAnalytics,
     updateAttendance,
+    selfMarkAttendance,
 };

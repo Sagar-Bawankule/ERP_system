@@ -7,6 +7,7 @@ const {
     getAttendanceSummary,
     getAttendanceAnalytics,
     updateAttendance,
+    selfMarkAttendance,
 } = require('../controllers/attendanceController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -16,6 +17,9 @@ router.use(protect);
 // Teacher routes
 router.post('/mark', authorize('teacher'), markAttendance);
 router.put('/:id', authorize('teacher', 'admin'), updateAttendance);
+
+// Student routes
+router.post('/self-mark', authorize('student'), selfMarkAttendance);
 
 // Teacher and Admin routes
 router.get('/class', authorize('teacher', 'admin'), getClassAttendance);

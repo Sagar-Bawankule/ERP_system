@@ -18,6 +18,7 @@ const StudentAttendance = () => {
     const [selectedMonth, setSelectedMonth] = useState(
         new Date().toISOString().slice(0, 7) // YYYY-MM format
     );
+    const [fingerprintModal, setFingerprintModal] = useState({ show: false, status: 'idle' });
 
     const setDemoData = useCallback(() => {
         // Demo attendance data for visualization
@@ -81,6 +82,32 @@ const StudentAttendance = () => {
         }
     }, [profile, selectedMonth, fetchAttendance]);
 
+    const handleFingerprintScan = () => {
+        setFingerprintModal({ show: true, status: 'scanning' });
+        
+        // Simulate scan duration
+        setTimeout(async () => {
+            try {
+                await attendanceService.markSelf();
+                setFingerprintModal(prev => ({ ...prev, status: 'success' }));
+                fetchAttendance(); // Refresh the list
+                
+                // Close modal after success
+                setTimeout(() => {
+                    setFingerprintModal({ show: false, status: 'idle' });
+                }, 2000);
+            } catch (error) {
+                console.error('Error marking self attendance:', error);
+                setFingerprintModal(prev => ({ ...prev, status: 'error' }));
+                
+                // Allow retry
+                setTimeout(() => {
+                    setFingerprintModal(prev => ({ ...prev, status: 'idle' }));
+                }, 2500);
+            }
+        }, 2500); // 2.5 seconds scanning animation
+    };
+
     const getStatusIcon = (status) => {
         switch (status) {
             case 'Present': return <FiCheck className="status-icon present" />;
@@ -124,6 +151,13 @@ const StudentAttendance = () => {
                     <p>Track your attendance records and statistics</p>
                 </div>
                 <div className="header-actions">
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={() => setFingerprintModal({ show: true, status: 'idle' })} 
+                        style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <FiCheck /> Fingerprint Attendance
+                    </button>
                     <select
                         className="form-select"
                         value={selectedMonth}
@@ -262,6 +296,58 @@ const StudentAttendance = () => {
                     </div>
                 )}
             </div>
+
+            {/* Fingerprint Modal */}
+            {fingerprintModal.show && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+                        <div className="modal-header">
+                            <h2 style={{ width: '100%' }}>Biometric Attendance</h2>
+                            <button 
+                                className="modal-close" 
+                                onClick={() => setFingerprintModal({ show: false, status: 'idle' })}
+                            >
+                                <FiX />
+                            </button>
+                        </div>
+                        
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                            Place your finger on the sensor below to mark your attendance for today.
+                        </p>
+
+                        <div className="fingerprint-container">
+                            <div 
+                                className={`fingerprint-sensor ${fingerprintModal.status}`} 
+                                onClick={fingerprintModal.status === 'idle' ? handleFingerprintScan : undefined}
+                            >
+                                {fingerprintModal.status === 'success' ? (
+                                    <FiCheck size={48} className="success-icon" />
+                                ) : fingerprintModal.status === 'error' ? (
+                                    <FiX size={48} className="error-icon" />
+                                ) : (
+                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="fp-svg">
+                                        <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4" />
+                                        <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 11.4-2.5" />
+                                        <path d="M8 14v1.5" />
+                                        <path d="M16 14v1.5" />
+                                        <path d="M12 20.5V22" />
+                                        <path d="M12 9a3 3 0 0 0-3 3v2" />
+                                        <path d="M15 12a3 3 0 0 0-3-3" />
+                                    </svg>
+                                )}
+                                {fingerprintModal.status === 'scanning' && <div className="scan-line"></div>}
+                            </div>
+                            
+                            <div className="fingerprint-status-text">
+                                {fingerprintModal.status === 'idle' && "Tap the sensor to scan"}
+                                {fingerprintModal.status === 'scanning' && "Scanning biometric data..."}
+                                {fingerprintModal.status === 'success' && <span style={{ color: 'var(--success)' }}>Attendance Marked Successfully!</span>}
+                                {fingerprintModal.status === 'error' && <span style={{ color: 'var(--error)' }}>Verification Failed. Try Again.</span>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
