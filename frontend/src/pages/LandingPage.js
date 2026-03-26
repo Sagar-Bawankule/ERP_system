@@ -4,7 +4,7 @@ import { FiArrowRight, FiUsers, FiBook, FiAward, FiTrendingUp, FiChevronLeft, Fi
 import { galleryService } from '../services/api';
 import './LandingPage.css';
 
-const GEMINI_API_KEY = 'AIzaSyCUWHF0WpU6XhBF9ux-65tOmSMpq6ACScI';
+const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_CONTEXT = `You are a helpful assistant for Samarth College of Engineering & Management ERP System. 
