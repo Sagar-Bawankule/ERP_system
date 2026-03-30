@@ -120,16 +120,48 @@ const AdminScholarships = () => {
             </div>
 
             {/* Tabs */}
-            <div className="tabs" style={{ marginBottom: 'var(--spacing-6)' }}>
+            <div
+                className="tabs"
+                style={{
+                    marginBottom: 'var(--spacing-6)',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 'var(--spacing-2)'
+                }}
+            >
                 <button
                     className={`tab ${activeTab === 'scholarships' ? 'active' : ''}`}
                     onClick={() => setActiveTab('scholarships')}
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 14px',
+                        borderRadius: 'var(--radius-md)',
+                        border: activeTab === 'scholarships' ? '1px solid var(--primary-500)' : '1px solid var(--border-color)',
+                        background: activeTab === 'scholarships' ? 'var(--primary-50)' : 'var(--bg-primary)',
+                        color: activeTab === 'scholarships' ? 'var(--primary-700)' : 'var(--text-primary)',
+                        fontWeight: 600,
+                        lineHeight: 1.2
+                    }}
                 >
                     <FiAward /> Scholarships ({scholarships.length})
                 </button>
                 <button
                     className={`tab ${activeTab === 'applications' ? 'active' : ''}`}
                     onClick={() => setActiveTab('applications')}
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 14px',
+                        borderRadius: 'var(--radius-md)',
+                        border: activeTab === 'applications' ? '1px solid var(--primary-500)' : '1px solid var(--border-color)',
+                        background: activeTab === 'applications' ? 'var(--primary-50)' : 'var(--bg-primary)',
+                        color: activeTab === 'applications' ? 'var(--primary-700)' : 'var(--text-primary)',
+                        fontWeight: 600,
+                        lineHeight: 1.2
+                    }}
                 >
                     <FiUsers /> Applications ({applications.length})
                 </button>
