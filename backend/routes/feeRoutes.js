@@ -5,6 +5,7 @@ const {
     getFeeStructures,
     assignFeeToStudent,
     getStudentFees,
+    getMyFees,
     makePayment,
     getPaymentHistory,
     getFeeAnalytics,
@@ -30,6 +31,9 @@ router.get('/overdue', authorize('admin'), getOverdueFees);
 
 // Payment routes
 router.post('/payment', protect, makePayment);
+
+// Student can view their own fees
+router.get('/my-fees', authorize('student'), getMyFees);
 
 // Student/Parent can view
 router.get('/student/:studentId', getStudentFees);

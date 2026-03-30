@@ -105,6 +105,91 @@ const assignFeeToStudent = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Get my fees (for logged-in student)
+// @route   GET /api/fees/my-fees
+// @access  Private (Student)
+const getMyFees = asyncHandler(async (req, res) => {
+    const User = require('../models/User');
+    const user = await User.findById(req.user.id);
+    
+    if (!user || !user.studentProfile) {
+        return res.status(400).json({
+            success: false,
+            message: 'Student profile not found',
+        });
+    }
+
+    const studentId = user.studentProfile;
+    const { academicYear } = req.query;
+
+    const query = { student: studentId };
+    if (academicYear) query.academicYear = academicYear;
+
+    let fees = await Fee.find(query)
+        .populate('feeStructure')
+        .populate('payments')
+        .sort({ createdAt: -1 });
+
+    // If no fees found, try to auto-assign from active fee structures
+    if (fees.length === 0) {
+        const student = await Student.findById(studentId);
+        if (student) {
+            // Find active fee structures matching student's department and semester
+            const activeStructures = await FeeStructure.find({
+                isActive: true,
+                $or: [
+                    { department: student.department },
+                    { department: 'All' },
+                    { department: { $exists: false } }
+                ]
+            });
+
+            // Auto-assign fees
+            for (const structure of activeStructures) {
+                const existingFee = await Fee.findOne({
+                    student: studentId,
+                    feeStructure: structure._id,
+                    academicYear: structure.academicYear,
+                });
+
+                if (!existingFee) {
+                    await Fee.create({
+                        student: studentId,
+                        feeStructure: structure._id,
+                        academicYear: structure.academicYear,
+                        semester: student.semester,
+                        totalAmount: structure.totalAmount,
+                        dueAmount: structure.totalAmount,
+                        dueDate: structure.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                    });
+                }
+            }
+
+            // Re-fetch fees after assignment
+            fees = await Fee.find(query)
+                .populate('feeStructure')
+                .populate('payments')
+                .sort({ createdAt: -1 });
+        }
+    }
+
+    // Calculate summary
+    const summary = fees.reduce(
+        (acc, fee) => ({
+            totalAmount: acc.totalAmount + fee.totalAmount,
+            paidAmount: acc.paidAmount + fee.paidAmount,
+            dueAmount: acc.dueAmount + fee.dueAmount,
+        }),
+        { totalAmount: 0, paidAmount: 0, dueAmount: 0 }
+    );
+
+    res.json({
+        success: true,
+        data: fees,
+        summary,
+    });
+});
+
 // @desc    Get student fees
 // @route   GET /api/fees/student/:studentId
 // @access  Private
@@ -434,6 +519,7 @@ module.exports = {
     getFeeStructures,
     assignFeeToStudent,
     getStudentFees,
+    getMyFees,
     makePayment,
     getPaymentHistory,
     getFeeAnalytics,

@@ -1,47 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiDollarSign, FiCreditCard, FiDownload, FiCalendar } from 'react-icons/fi';
-import { useAuth } from '../../context/AuthContext';
+import { FiDollarSign, FiCreditCard, FiDownload, FiCalendar, FiAlertCircle } from 'react-icons/fi';
 import { feeService } from '../../services/api';
 import './StudentPages.css';
 
 const StudentFees = () => {
-    const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
     const [fees, setFees] = useState([]);
     const [summary, setSummary] = useState({ total: 0, paid: 0, due: 0 });
-
-    const setDemoData = useCallback(() => {
-        setFees([
-            {
-                _id: '1',
-                name: 'Tuition Fee - Odd Semester 2024-25',
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 55000,
-                paidAmount: 55000,
-                dueAmount: 0,
-                status: 'Paid',
-                dueDate: new Date('2024-08-15'),
-            },
-            {
-                _id: '2',
-                name: 'Exam Fee - Semester 5',
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 2700,
-                paidAmount: 0,
-                dueAmount: 2700,
-                status: 'Pending',
-                dueDate: new Date('2024-12-31'),
-            },
-        ]);
-        setSummary({ total: 57700, paid: 55000, due: 2700 });
-        setLoading(false);
-    }, []);
+    const [error, setError] = useState(null);
 
     const fetchFees = useCallback(async () => {
+        setLoading(true);
+        setError(null);
         try {
-            const res = await feeService.getStudentFees(profile._id);
+            // Use the new /my-fees endpoint which auto-assigns fees if needed
+            const res = await feeService.getMyFees();
             const feesData = res.data.data || [];
 
             // Map fee data to include structure name
@@ -51,7 +24,7 @@ const StudentFees = () => {
             }));
             setFees(formattedFees);
 
-            // Calculate summary from fees (backend returns totalAmount/paidAmount/dueAmount)
+            // Use summary from backend response
             const calcSummary = {
                 total: res.data.summary?.totalAmount || feesData.reduce((sum, f) => sum + (f.totalAmount || 0), 0),
                 paid: res.data.summary?.paidAmount || feesData.reduce((sum, f) => sum + (f.paidAmount || 0), 0),
@@ -60,18 +33,16 @@ const StudentFees = () => {
             setSummary(calcSummary);
         } catch (error) {
             console.error('Error fetching fees:', error);
-            setDemoData();
+            setError('Unable to load fee information. Please try again later.');
+            setFees([]);
+            setSummary({ total: 0, paid: 0, due: 0 });
         }
         setLoading(false);
-    }, [profile, setDemoData]);
+    }, []);
 
     useEffect(() => {
-        if (profile?._id) {
-            fetchFees();
-        } else {
-            setDemoData();
-        }
-    }, [profile, fetchFees, setDemoData]);
+        fetchFees();
+    }, [fetchFees]);
 
     const getStatusClass = (status) => {
         switch (status) {
@@ -133,53 +104,76 @@ const StudentFees = () => {
                 </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+                <div className="section-card" style={{ marginBottom: 'var(--spacing-6)', padding: 'var(--spacing-4)', background: 'var(--error-bg)', borderLeft: '4px solid var(--error-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', color: 'var(--error-color)' }}>
+                        <FiAlertCircle />
+                        <span>{error}</span>
+                    </div>
+                </div>
+            )}
+
             {/* Fee Cards */}
-            <div className="fee-cards-grid">
-                {fees.map((fee) => (
-                    <div key={fee._id} className={`fee-card ${getStatusClass(fee.status)}`}>
-                        <div className="fee-card-header">
-                            <div>
-                                <h3>{fee.name}</h3>
-                                <p>Academic Year: {fee.academicYear}</p>
-                            </div>
-                            <span className={`badge badge-${fee.status === 'Paid' ? 'success' : fee.status === 'Overdue' ? 'error' : 'warning'}`}>
-                                {fee.status}
-                            </span>
-                        </div>
-                        <div className="fee-card-body">
-                            <div className="fee-amount-row">
-                                <span>Total Amount</span>
-                                <span>₹{fee.totalAmount?.toLocaleString()}</span>
-                            </div>
-                            <div className="fee-amount-row">
-                                <span>Paid Amount</span>
-                                <span className="text-success">₹{fee.paidAmount?.toLocaleString()}</span>
-                            </div>
-                            <div className="fee-amount-row total">
-                                <span>Due Amount</span>
-                                <span className={fee.dueAmount > 0 ? 'text-error' : ''}>
-                                    ₹{fee.dueAmount?.toLocaleString()}
+            {fees.length > 0 ? (
+                <div className="fee-cards-grid">
+                    {fees.map((fee) => (
+                        <div key={fee._id} className={`fee-card ${getStatusClass(fee.status)}`}>
+                            <div className="fee-card-header">
+                                <div>
+                                    <h3>{fee.name}</h3>
+                                    <p>Academic Year: {fee.academicYear}</p>
+                                </div>
+                                <span className={`badge badge-${fee.status === 'Paid' ? 'success' : fee.status === 'Overdue' ? 'error' : 'warning'}`}>
+                                    {fee.status}
                                 </span>
                             </div>
-                        </div>
-                        <div className="fee-card-footer">
-                            <div className="due-date">
-                                <FiCalendar style={{ marginRight: 4 }} />
-                                Due: {new Date(fee.dueDate).toLocaleDateString()}
+                            <div className="fee-card-body">
+                                <div className="fee-amount-row">
+                                    <span>Total Amount</span>
+                                    <span>₹{fee.totalAmount?.toLocaleString()}</span>
+                                </div>
+                                <div className="fee-amount-row">
+                                    <span>Paid Amount</span>
+                                    <span className="text-success">₹{fee.paidAmount?.toLocaleString()}</span>
+                                </div>
+                                <div className="fee-amount-row total">
+                                    <span>Due Amount</span>
+                                    <span className={fee.dueAmount > 0 ? 'text-error' : ''}>
+                                        ₹{fee.dueAmount?.toLocaleString()}
+                                    </span>
+                                </div>
                             </div>
-                            {fee.status === 'Paid' ? (
-                                <button className="btn btn-secondary btn-sm">
-                                    <FiDownload /> Receipt
-                                </button>
-                            ) : (
-                                <button className="btn btn-primary btn-sm">
-                                    Pay Now
-                                </button>
-                            )}
+                            <div className="fee-card-footer">
+                                <div className="due-date">
+                                    <FiCalendar style={{ marginRight: 4 }} />
+                                    Due: {new Date(fee.dueDate).toLocaleDateString()}
+                                </div>
+                                {fee.status === 'Paid' ? (
+                                    <button className="btn btn-secondary btn-sm">
+                                        <FiDownload /> Receipt
+                                    </button>
+                                ) : (
+                                    <button className="btn btn-primary btn-sm">
+                                        Pay Now
+                                    </button>
+                                )}
+                            </div>
                         </div>
+                    ))}
+                </div>
+            ) : !error && (
+                <div className="section-card">
+                    <div className="empty-state" style={{ padding: 'var(--spacing-12)', textAlign: 'center' }}>
+                        <FiDollarSign size={48} style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-4)' }} />
+                        <h3>No Fees Assigned</h3>
+                        <p style={{ color: 'var(--text-muted)' }}>
+                            No fee structures have been assigned to your account yet. 
+                            Please contact the administration office if you believe this is an error.
+                        </p>
                     </div>
-                ))}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

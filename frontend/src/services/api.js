@@ -79,6 +79,7 @@ export const feeService = {
     getStructures: (params) => api.get('/fees/structures', { params }),
     createStructure: (data) => api.post('/fees/structure', data),
     getStudentFees: (studentId, params) => api.get(`/fees/student/${studentId}`, { params }),
+    getMyFees: (params) => api.get('/fees/my-fees', { params }),
     makePayment: (data) => api.post('/fees/payment', data),
     getPayments: (studentId) => api.get(`/fees/payments/${studentId}`),
     getAnalytics: (params) => api.get('/fees/analytics', { params }),
