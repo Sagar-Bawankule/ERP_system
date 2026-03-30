@@ -11,6 +11,7 @@ const {
     updateFeeStructure,
     getAllFees,
     getOverdueFees,
+    assignMissingFeesToAll,
 } = require('../controllers/feeController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -23,6 +24,7 @@ router.post('/structure', authorize('admin'), createFeeStructure);
 router.get('/structures', authorize('admin'), getFeeStructures);
 router.put('/structure/:id', authorize('admin'), updateFeeStructure);
 router.post('/assign', authorize('admin'), assignFeeToStudent);
+router.post('/assign-missing', authorize('admin'), assignMissingFeesToAll);
 router.get('/analytics', authorize('admin'), getFeeAnalytics);
 router.get('/overdue', authorize('admin'), getOverdueFees);
 

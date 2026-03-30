@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowRight, FiUsers, FiBook, FiAward, FiTrendingUp, FiChevronLeft, FiChevronRight, FiMessageCircle, FiX, FiSend } from 'react-icons/fi';
-import { galleryService } from '../services/api';
+import { galleryService, chatbotService } from '../services/api';
 import './LandingPage.css';
-
-const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_CONTEXT = `You are a helpful assistant for Samarth College of Engineering & Management ERP System. 
 Answer questions about:
@@ -42,34 +39,28 @@ const LandingPage = () => {
         setChatInput('');
         setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
         setChatLoading(true);
+        
         try {
-            const response = await fetch(GEMINI_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: {
-                        parts: [{ text: SYSTEM_CONTEXT }]
-                    },
-                    contents: [
-                        { parts: [{ text: userMsg }] }
-                    ],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 512,
-                    }
-                })
-            });
-            const data = await response.json();
-            if (!response.ok) {
-                console.error('Gemini API Error:', data);
-                setChatMessages(prev => [...prev, { role: 'assistant', text: `API Error: ${data?.error?.message || 'Unknown error'}` }]);
+            const response = await chatbotService.sendMessage(userMsg);
+            
+            if (response.data.success && response.data.data?.message) {
+                setChatMessages(prev => [...prev, { 
+                    role: 'assistant', 
+                    text: response.data.data.message 
+                }]);
             } else {
-                const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not understand that. Please try again.';
-                setChatMessages(prev => [...prev, { role: 'assistant', text: reply }]);
+                setChatMessages(prev => [...prev, { 
+                    role: 'assistant', 
+                    text: 'Sorry, I could not understand that. Please try again.' 
+                }]);
             }
-        } catch (err) {
-            console.error('Chat error:', err);
-            setChatMessages(prev => [...prev, { role: 'assistant', text: 'Oops! Network error. Please check your connection.' }]);
+        } catch (error) {
+            console.error('Chat error:', error);
+            const errorMessage = error.response?.data?.message || 'Oops! Network error. Please check your connection.';
+            setChatMessages(prev => [...prev, { 
+                role: 'assistant', 
+                text: errorMessage
+            }]);
         }
         setChatLoading(false);
     };

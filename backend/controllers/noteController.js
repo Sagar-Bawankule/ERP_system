@@ -1,13 +1,17 @@
 const Note = require('../models/Note');
 const Subject = require('../models/Subject');
 const Teacher = require('../models/Teacher');
+const Student = require('../models/Student');
+const path = require('path');
+const fs = require('fs');
+const PDFDocument = require('pdfkit');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // @desc    Upload note/study material
 // @route   POST /api/notes
 // @access  Private (Teacher)
 const uploadNote = asyncHandler(async (req, res) => {
-    const { title, description, subjectId, type, unit, tags } = req.body;
+    const { title, description, subjectId, type, unit, tags, assignmentType, assignedStudents, assignedDepartments, dueDate, priority } = req.body;
 
     if (!req.file) {
         return res.status(400).json({
@@ -32,7 +36,8 @@ const uploadNote = asyncHandler(async (req, res) => {
         });
     }
 
-    const note = await Note.create({
+    // Process assignment data
+    const noteData = {
         title,
         description,
         subject: subjectId,
@@ -48,6 +53,31 @@ const uploadNote = asyncHandler(async (req, res) => {
             size: req.file.size,
             mimeType: req.file.mimetype,
         },
+        assignmentType: assignmentType || 'department',
+        priority: priority || 'Medium',
+    };
+
+    // Handle assignment based on type
+    if (assignmentType === 'specific_students' && assignedStudents) {
+        noteData.assignedStudents = Array.isArray(assignedStudents) 
+            ? assignedStudents 
+            : assignedStudents.split(',');
+    }
+    
+    if (assignmentType === 'department' && assignedDepartments) {
+        noteData.assignedDepartments = Array.isArray(assignedDepartments) 
+            ? assignedDepartments 
+            : assignedDepartments.split(',');
+    } else if (assignmentType === 'department') {
+        // Default to subject's department
+        noteData.assignedDepartments = [subject.department];
+    }
+
+    if (dueDate) {
+        noteData.dueDate = new Date(dueDate);
+    }
+
+    const note = await Note.create(noteData);
     });
 
     res.status(201).json({
@@ -297,4 +327,6 @@ module.exports = {
     deleteNote,
     getNotesBySubject,
     getMyNotes,
+    getMyAssignedNotes,
+    getNoteStats,
 };

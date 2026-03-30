@@ -5,7 +5,6 @@ const Attendance = require('../models/Attendance');
 const Marks = require('../models/Marks');
 const { Fee } = require('../models/Fee');
 const LeaveApplication = require('../models/LeaveApplication');
-const Notification = require('../models/Notification');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // @desc    Get all parents
@@ -352,42 +351,6 @@ const getWardLeaves = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Get parent notifications
-// @route   GET /api/parents/notifications
-// @access  Private (Parent)
-const getNotifications = asyncHandler(async (req, res) => {
-    const notifications = await Notification.find({ recipient: req.user.id })
-        .sort({ createdAt: -1 })
-        .limit(50);
-
-    res.json({
-        success: true,
-        data: notifications,
-    });
-});
-
-// @desc    Mark notification as read
-// @route   PUT /api/parents/notifications/:id/read
-// @access  Private (Parent)
-const markNotificationRead = asyncHandler(async (req, res) => {
-    const notification = await Notification.findOneAndUpdate(
-        { _id: req.params.id, recipient: req.user.id },
-        { isRead: true },
-        { new: true }
-    );
-
-    if (!notification) {
-        return res.status(404).json({
-            success: false,
-            message: 'Notification not found',
-        });
-    }
-
-    res.json({
-        success: true,
-        data: notification,
-    });
-});
 
 // @desc    Update parent profile
 // @route   PUT /api/parents/:id
@@ -505,7 +468,5 @@ module.exports = {
     getWardFees,
     getWardMarks,
     getWardLeaves,
-    getNotifications,
-    markNotificationRead,
     linkStudent,
 };

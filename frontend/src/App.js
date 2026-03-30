@@ -155,7 +155,6 @@ function App() {
                             <Route path="attendance" element={<ParentAttendance />} />
                             <Route path="marks" element={<ParentMarks />} />
                             <Route path="fees" element={<ParentFees />} />
-                            <Route path="notifications" element={<ParentNotifications />} />
                             <Route path="leave" element={<ParentLeave />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>

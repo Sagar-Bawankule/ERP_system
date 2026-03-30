@@ -14,7 +14,7 @@ const ParentDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [wardsData, setWardsData] = useState([]);
     const [selectedWard, setSelectedWard] = useState(null);
-    const [notifications, setNotifications] = useState([]);
+
 
     const setDemoData = useCallback(() => {
         const demoWards = [
@@ -44,26 +44,18 @@ const ParentDashboard = () => {
         setWardsData(demoWards);
         setSelectedWard(demoWards[0]);
 
-        setNotifications([
-            { _id: '1', title: 'Fee Payment Reminder', message: 'Exam fee payment due by Dec 31', type: 'fees', createdAt: new Date(), isRead: false },
-            { _id: '2', title: 'Leave Approved', message: 'Your ward\'s leave application has been approved', type: 'leave', createdAt: new Date(Date.now() - 86400000), isRead: true },
-            { _id: '3', title: 'PTM Meeting', message: 'Parent-Teacher meeting scheduled for Jan 5', type: 'general', createdAt: new Date(Date.now() - 172800000), isRead: false },
-        ]);
+
     }, []);
 
     const fetchDashboardData = useCallback(async () => {
         try {
-            const [dashboardRes, notificationsRes] = await Promise.all([
-                parentService.getWardDashboard(),
-                parentService.getNotifications()
-            ]);
+            const dashboardRes = await parentService.getWardDashboard();
 
             const wards = dashboardRes.data.data || [];
             setWardsData(wards);
             if (wards.length > 0) {
                 setSelectedWard(wards[0]);
             }
-            setNotifications(notificationsRes.data.data || []);
         } catch (error) {
             console.error('Error fetching dashboard:', error);
             setDemoData();
@@ -103,7 +95,7 @@ const ParentDashboard = () => {
     }
 
     const attendanceStatus = getAttendanceStatus(selectedWard?.attendance?.summary?.percentage || 0);
-    const unreadNotifications = notifications.filter(n => !n.isRead).length;
+
 
     return (
         <div className="parent-page animate-fade-in">
@@ -316,47 +308,7 @@ const ParentDashboard = () => {
                     </div>
                 </div>
 
-                {/* Notifications */}
-                <div className="dashboard-card">
-                    <div className="card-header">
-                        <h3>
-                            <FiBell />
-                            Notifications
-                            {unreadNotifications > 0 && (
-                                <span className="notification-badge">{unreadNotifications}</span>
-                            )}
-                        </h3>
-                        <Link to="/parent/notifications" className="view-all">View All</Link>
-                    </div>
-                    <div className="card-body">
-                        {notifications.length > 0 ? (
-                            <div className="notifications-list">
-                                {notifications.slice(0, 4).map((notification) => (
-                                    <div key={notification._id} className={`notification-item ${!notification.isRead ? 'unread' : ''}`}>
-                                        <div className={`notification-icon ${notification.type}`}>
-                                            {notification.type === 'fees' && <FiDollarSign />}
-                                            {notification.type === 'leave' && <FiFileText />}
-                                            {notification.type === 'attendance' && <FiCalendar />}
-                                            {notification.type === 'marks' && <FiBookOpen />}
-                                            {notification.type === 'general' && <FiBell />}
-                                        </div>
-                                        <div className="notification-content">
-                                            <h4>{notification.title}</h4>
-                                            <p>{notification.message}</p>
-                                            <span className="time">
-                                                {new Date(notification.createdAt).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="empty-mini">
-                                <p>No notifications</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+
             </div>
         </div>
     );

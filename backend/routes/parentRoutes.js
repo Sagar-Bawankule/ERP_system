@@ -10,8 +10,6 @@ const {
     getWardFees,
     getWardMarks,
     getWardLeaves,
-    getNotifications,
-    markNotificationRead,
     linkStudent,
 } = require('../controllers/parentController');
 const { protect, authorize } = require('../middleware/auth');
@@ -25,8 +23,6 @@ router.get('/ward/:studentId/attendance', authorize('parent'), getWardAttendance
 router.get('/ward/:studentId/fees', authorize('parent'), getWardFees);
 router.get('/ward/:studentId/marks', authorize('parent'), getWardMarks);
 router.get('/ward/:studentId/leaves', authorize('parent'), getWardLeaves);
-router.get('/notifications', authorize('parent'), getNotifications);
-router.put('/notifications/:id/read', authorize('parent'), markNotificationRead);
 
 // Admin only routes
 router.get('/', authorize('admin'), getAllParents);

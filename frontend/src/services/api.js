@@ -133,14 +133,16 @@ export const galleryService = {
     delete: (id) => api.delete(`/gallery/${id}`),
 };
 
+export const chatbotService = {
+    sendMessage: (message) => api.post('/chatbot/chat', { message }),
+};
+
 export const parentService = {
     getWardDashboard: () => api.get('/parents/ward-dashboard'),
     getWardAttendance: (studentId, params) => api.get(`/parents/ward/${studentId}/attendance`, { params }),
     getWardFees: (studentId) => api.get(`/parents/ward/${studentId}/fees`),
     getWardMarks: (studentId) => api.get(`/parents/ward/${studentId}/marks`),
     getWardLeaves: (studentId) => api.get(`/parents/ward/${studentId}/leaves`),
-    getNotifications: () => api.get('/parents/notifications'),
-    markNotificationRead: (id) => api.put(`/parents/notifications/${id}/read`),
 };
 
 export const noticeService = {

@@ -69,7 +69,6 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks & Results' },
             { path: `${baseRoute}/fees`, icon: FiDollarSign, label: 'Fees' },
-            { path: `${baseRoute}/notifications`, icon: FiBell, label: 'Notifications' },
             { path: `${baseRoute}/leave`, icon: FiCalendar, label: 'Leave' },
             { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
         ];
@@ -238,12 +237,6 @@ const DashboardLayout = () => {
                     </div>
 
                     <div className="header-right">
-                        {/* Notifications */}
-                        <button className="header-icon-btn">
-                            <FiBell />
-                            <span className="notification-badge">3</span>
-                        </button>
-
                         {/* Profile Dropdown */}
                         <div className="profile-dropdown" ref={dropdownRef}>
                             <button

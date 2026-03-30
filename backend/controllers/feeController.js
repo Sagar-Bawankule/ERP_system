@@ -2,6 +2,7 @@ const { Fee, FeeStructure } = require('../models/Fee');
 const Payment = require('../models/Payment');
 const Student = require('../models/Student');
 const Notification = require('../models/Notification');
+const { assignMissingFees } = require('../utils/feeAssignment');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
@@ -415,6 +416,19 @@ const getOverdueFees = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Assign missing fees to all students
+// @route   POST /api/fees/assign-missing
+// @access  Private (Admin)
+const assignMissingFeesToAll = asyncHandler(async (req, res) => {
+    const assignedCount = await assignMissingFees();
+    
+    res.json({
+        success: true,
+        message: `Successfully assigned fees to ${assignedCount} students`,
+        data: { assignedCount }
+    });
+});
+
 module.exports = {
     createFeeStructure,
     getFeeStructures,
@@ -426,4 +440,5 @@ module.exports = {
     updateFeeStructure,
     getAllFees,
     getOverdueFees,
+    assignMissingFeesToAll,
 };
