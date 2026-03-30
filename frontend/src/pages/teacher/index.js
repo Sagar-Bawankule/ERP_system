@@ -1,3 +1,4 @@
+export { default as TeacherMeetings } from './TeacherMeetings';
 export {
     TeacherDashboard,
     TeacherAttendance,

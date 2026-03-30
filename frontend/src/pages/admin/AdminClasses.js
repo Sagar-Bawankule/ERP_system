@@ -30,7 +30,8 @@ const AdminClasses = () => {
         'Civil Engineering',
         'Electrical Engineering',
         'Electronics Engineering',
-        'Information Technology'
+        'Information Technology',
+        'Artificial Intelligence and Machine Learning'
     ];
 
     // Generate current academic year

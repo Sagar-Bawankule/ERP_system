@@ -224,4 +224,16 @@ export const collegeService = {
     getInfo: () => api.get('/college-info'),
 };
 
+export const meetingService = {
+    getAll: (params) => api.get('/meetings', { params }),
+    getById: (id) => api.get(`/meetings/${id}`),
+    create: (data) => api.post('/meetings', data),
+    update: (id, data) => api.put(`/meetings/${id}`, data),
+    delete: (id) => api.delete(`/meetings/${id}`),
+    getMyMeetings: () => api.get('/meetings/my-meetings'),
+    getUpcoming: () => api.get('/meetings/upcoming'),
+    join: (id) => api.post(`/meetings/${id}/join`),
+    getAnalytics: (params) => api.get('/meetings/analytics', { params }),
+};
+
 export default api;

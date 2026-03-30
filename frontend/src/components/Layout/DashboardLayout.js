@@ -4,7 +4,7 @@ import {
     FiHome, FiUsers, FiBook, FiCalendar, FiDollarSign,
     FiFileText, FiAward, FiImage, FiBarChart2, FiSettings,
     FiLogOut, FiMenu, FiX, FiBell, FiUser, FiChevronDown,
-    FiHelpCircle, FiMessageSquare
+    FiHelpCircle, FiMessageSquare, FiVideo
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import './DashboardLayout.css';
@@ -44,6 +44,7 @@ const DashboardLayout = () => {
         const studentNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
             { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/meetings`, icon: FiVideo, label: 'Virtual Classes' },
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/fees`, icon: FiDollarSign, label: 'Fees' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks & Results' },
@@ -57,6 +58,7 @@ const DashboardLayout = () => {
         const teacherNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
             { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/meetings`, icon: FiVideo, label: 'Virtual Classes' },
             { path: `${baseRoute}/students`, icon: FiUsers, label: 'Students' },
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks Entry' },
@@ -78,6 +80,7 @@ const DashboardLayout = () => {
         const adminNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
             { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/meetings`, icon: FiVideo, label: 'Virtual Meetings' },
             { path: `${baseRoute}/students`, icon: FiUsers, label: 'Students' },
             { path: `${baseRoute}/teachers`, icon: FiUsers, label: 'Teachers' },
             { path: `${baseRoute}/parents`, icon: FiUsers, label: 'Parents' },

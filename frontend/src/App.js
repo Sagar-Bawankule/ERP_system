@@ -26,7 +26,7 @@ import StudentNotes from './pages/student/StudentNotes';
 import StudentLeave from './pages/student/StudentLeave';
 import StudentScholarship from './pages/student/StudentScholarship';
 import StudentProfile from './pages/student/StudentProfile';
-import StudentLibrary from './pages/student/StudentLibrary';
+import StudentMeetings from './pages/student/StudentMeetings';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -34,7 +34,7 @@ import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import TeacherMarks from './pages/teacher/TeacherMarks';
 import TeacherNotes from './pages/teacher/TeacherNotes';
 import TeacherStudents from './pages/teacher/TeacherStudents';
-import TeacherLibrary from './pages/teacher/TeacherLibrary';
+import TeacherMeetings from './pages/teacher/TeacherMeetings';
 
 // Parent Pages
 import {
@@ -59,6 +59,7 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminSubjects from './pages/admin/AdminSubjects';
 import AdminClasses from './pages/admin/AdminClasses';
 import AdminTeachingAssignments from './pages/admin/AdminTeachingAssignments';
+import AdminMeetings from './pages/admin/AdminMeetings';
 
 // Super Admin Pages
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
@@ -123,7 +124,7 @@ function App() {
                             <Route path="notes" element={<StudentNotes />} />
                             <Route path="leave" element={<StudentLeave />} />
                             <Route path="scholarship" element={<StudentScholarship />} />
-                            <Route path="library" element={<StudentLibrary />} />
+                            <Route path="meetings" element={<StudentMeetings />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
 
@@ -142,7 +143,7 @@ function App() {
                             <Route path="marks" element={<TeacherMarks />} />
                             <Route path="notes" element={<TeacherNotes />} />
                             <Route path="students" element={<TeacherStudents />} />
-                            <Route path="library" element={<TeacherLibrary />} />
+                            <Route path="meetings" element={<TeacherMeetings />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
 
@@ -185,6 +186,7 @@ function App() {
                             <Route path="subjects" element={<AdminSubjects />} />
                             <Route path="classes" element={<AdminClasses />} />
                             <Route path="teaching-assignments" element={<AdminTeachingAssignments />} />
+                            <Route path="meetings" element={<AdminMeetings />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
 

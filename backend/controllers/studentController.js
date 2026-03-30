@@ -1,5 +1,6 @@
 const Student = require('../models/Student');
 const User = require('../models/User');
+const { Fee, FeeStructure } = require('../models/Fee');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // @desc    Get all students
@@ -126,44 +127,7 @@ const createStudent = asyncHandler(async (req, res) => {
         }).sort({ createdAt: -1 }); // Get the latest structure
         
         if (feeStructure) {
-            const newFee = await Fee.create({
-                student: student._id,
-                feeStructure: feeStructure._id,
-                academicYear: academicYear,
-                semester: student.semester,
-                totalAmount: feeStructure.totalAmount,
-                paidAmount: 0,
-                dueAmount: feeStructure.totalAmount,
-                status: 'Pending',
-                dueDate: feeStructure.dueDate
-            });
-            console.log(`Fee assigned to student ${rollNumber}: ₹${feeStructure.totalAmount}`);
-        } else {
-            console.log(`No fee structure found for student ${rollNumber} - ${student.department}`);
-        }
-    } catch (feeError) {
-        console.error('Error assigning fees to new student:', feeError);
-        // Don't fail student creation if fee assignment fails
-    }
-
-    // Auto-assign fees to the new student
-    try {
-        // Find applicable fee structure for the student
-        const currentYear = new Date().getFullYear();
-        const academicYear = `${currentYear}-${currentYear + 1}`;
-        
-        const feeStructure = await FeeStructure.findOne({
-            $or: [
-                { department: student.department },
-                { department: 'All' }
-            ],
-            course: student.course || 'B.E.',
-            academicYear: academicYear,
-            isActive: true
-        }).sort({ createdAt: -1 }); // Get the latest structure
-        
-        if (feeStructure) {
-            const newFee = await Fee.create({
+            await Fee.create({
                 student: student._id,
                 feeStructure: feeStructure._id,
                 academicYear: academicYear,

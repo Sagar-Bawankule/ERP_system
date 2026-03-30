@@ -30,7 +30,7 @@ const accountantRoutes = require('./routes/accountantRoutes');
 const communicationsRoutes = require('./routes/communicationsRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
-const assignmentRoutes = require('./routes/assignmentRoutes');
+const meetingRoutes = require('./routes/meetingRoutes');
 
 // Initialize Express app
 const app = express();
@@ -94,7 +94,7 @@ app.use('/api/accountant', accountantRoutes);
 app.use('/api/communications', communicationsRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/chatbot', chatbotRoutes);
-app.use('/api/assignments', assignmentRoutes);
+app.use('/api/meetings', meetingRoutes);
 
 // Root endpoint - API information
 app.get('/', (req, res) => {
@@ -152,6 +152,7 @@ app.get('/api/college-info', (req, res) => {
                 'Electrical Engineering',
                 'Electronics Engineering',
                 'Information Technology',
+                'Artificial Intelligence and Machine Learning',
             ],
             courses: ['B.E.', 'B.Tech', 'M.E.', 'M.Tech', 'Diploma'],
             contact: {

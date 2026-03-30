@@ -24,7 +24,7 @@ const studentSchema = new mongoose.Schema({
     department: {
         type: String,
         required: [true, 'Department is required'],
-        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology'],
+        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning'],
     },
     course: {
         type: String,
