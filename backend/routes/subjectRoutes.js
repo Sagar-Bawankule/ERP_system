@@ -63,15 +63,20 @@ router.post('/', authorize('admin'), asyncHandler(async (req, res) => {
         });
     }
 
-    const subject = await Subject.create({
+    const subjectData = {
         code,
         name,
         department,
         semester,
         credits,
         type,
-        teacher
-    });
+    };
+
+    if (teacher && String(teacher).trim() !== '') {
+        subjectData.teacher = teacher;
+    }
+
+    const subject = await Subject.create(subjectData);
 
     res.status(201).json({
         success: true,
@@ -93,7 +98,12 @@ router.put('/:id', authorize('admin'), asyncHandler(async (req, res) => {
         });
     }
 
-    subject = await Subject.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = { ...req.body };
+    if (updateData.teacher === '') {
+        delete updateData.teacher;
+    }
+
+    subject = await Subject.findByIdAndUpdate(req.params.id, updateData, {
         new: true,
         runValidators: true
     });

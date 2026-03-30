@@ -38,16 +38,26 @@ const AdminSubjects = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const payload = {
+                code: formData.subjectCode.trim().toUpperCase(),
+                name: formData.name.trim(),
+                department: formData.department,
+                semester: Number(formData.semester),
+                credits: Number(formData.credits),
+            };
+
+            if (formData.teacher && formData.teacher.trim() !== '') {
+                payload.teacher = formData.teacher.trim();
+            }
+
             if (editingSubject) {
-                // Update existing subject
-                const res = await api.put(`/subjects/${editingSubject._id}`, formData);
+                const res = await api.put(`/subjects/${editingSubject._id}`, payload);
                 if (res.data.success) {
                     toast.success('Subject updated successfully!');
                     fetchSubjects();
                 }
             } else {
-                // Create new subject
-                const res = await api.post('/subjects', formData);
+                const res = await api.post('/subjects', payload);
                 if (res.data.success) {
                     toast.success('Subject added successfully!');
                     fetchSubjects();
@@ -84,7 +94,7 @@ const AdminSubjects = () => {
     const openEditModal = (subject) => {
         setEditingSubject(subject);
         setFormData({
-            subjectCode: subject.subjectCode,
+            subjectCode: subject.code || subject.subjectCode || '',
             name: subject.name,
             department: subject.department,
             semester: subject.semester,
@@ -96,8 +106,9 @@ const AdminSubjects = () => {
     };
 
     const filteredSubjects = subjects.filter(subject => {
+        const subjectCode = subject.code || subject.subjectCode || '';
         const matchesSearch = subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            subject.subjectCode.toLowerCase().includes(searchQuery.toLowerCase());
+            subjectCode.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesDept = !selectedDepartment || subject.department === selectedDepartment;
         return matchesSearch && matchesDept;
     });
@@ -187,7 +198,7 @@ const AdminSubjects = () => {
                         <tbody>
                             {filteredSubjects.map((subject) => (
                                 <tr key={subject._id}>
-                                    <td><strong>{subject.subjectCode}</strong></td>
+                                    <td><strong>{subject.code || subject.subjectCode}</strong></td>
                                     <td>{subject.name}</td>
                                     <td>{subject.department}</td>
                                     <td>Sem {subject.semester}</td>
