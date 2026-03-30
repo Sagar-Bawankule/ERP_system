@@ -15,8 +15,8 @@ const createMeeting = asyncHandler(async (req, res) => {
         subject, host, isRecurring, recurringPattern
     } = req.body;
 
-    // Create meeting
-    const meeting = await VirtualMeeting.create({
+    // Prepare meeting data and remove empty fields
+    const meetingData = {
         title,
         description,
         meetingLink,
@@ -31,10 +31,17 @@ const createMeeting = asyncHandler(async (req, res) => {
         departments,
         roles,
         individuals,
-        subject,
         isRecurring,
         recurringPattern
-    });
+    };
+
+    // Only add subject if it's a valid ObjectId
+    if (subject && subject.trim() !== '') {
+        meetingData.subject = subject;
+    }
+
+    // Create meeting
+    const meeting = await VirtualMeeting.create(meetingData);
 
     // Calculate total targeted users
     let targetedCount = 0;

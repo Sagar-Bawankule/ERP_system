@@ -99,6 +99,11 @@ const AdminMeetings = () => {
             
             delete meetingData.selectedClass;
             
+            // Remove empty subject field to prevent ObjectId cast error
+            if (!meetingData.subject || meetingData.subject === '') {
+                delete meetingData.subject;
+            }
+            
             if (formData.targetingType !== 'class') {
                 delete meetingData.classDetails;
             }
@@ -108,6 +113,8 @@ const AdminMeetings = () => {
             if (formData.targetingType !== 'role') {
                 delete meetingData.roles;
             }
+
+            console.log('Sending meeting data:', meetingData); // Debug log
 
             if (selectedMeeting) {
                 await meetingService.update(selectedMeeting._id, meetingData);
