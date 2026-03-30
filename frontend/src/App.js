@@ -42,8 +42,8 @@ import {
     ParentAttendance,
     ParentMarks,
     ParentFees,
-    ParentNotifications,
-    ParentLeave
+    ParentLeave,
+    ParentMeetings
 } from './pages/parent';
 
 // Admin Pages
@@ -157,6 +157,7 @@ function App() {
                             <Route path="dashboard" element={<ParentDashboard />} />
                             <Route path="notices" element={<NoticesDashboard />} />
                             <Route path="notices/:id" element={<NoticeDetails />} />
+                            <Route path="meetings" element={<ParentMeetings />} />
                             <Route path="attendance" element={<ParentAttendance />} />
                             <Route path="marks" element={<ParentMarks />} />
                             <Route path="fees" element={<ParentFees />} />

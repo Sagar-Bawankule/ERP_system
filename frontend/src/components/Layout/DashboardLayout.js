@@ -70,6 +70,7 @@ const DashboardLayout = () => {
         const parentNav = [
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
             { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
+            { path: `${baseRoute}/meetings`, icon: FiVideo, label: 'Meetings' },
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks & Results' },
             { path: `${baseRoute}/fees`, icon: FiDollarSign, label: 'Fees' },
