@@ -50,6 +50,7 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/notes`, icon: FiFileText, label: 'Study Materials' },
             { path: `${baseRoute}/leave`, icon: FiCalendar, label: 'Leave' },
             { path: `${baseRoute}/scholarship`, icon: FiAward, label: 'Scholarships' },
+            { path: `${baseRoute}/library`, icon: FiBook, label: 'Library' },
             { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
         ];
 
@@ -60,6 +61,7 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks Entry' },
             { path: `${baseRoute}/notes`, icon: FiFileText, label: 'Upload Notes' },
+            { path: `${baseRoute}/library`, icon: FiBook, label: 'Library' },
             { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
         ];
 

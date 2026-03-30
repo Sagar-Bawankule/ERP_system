@@ -330,6 +330,105 @@ const getLibraryDashboard = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Get my borrowed books (for student/teacher)
+// @route   GET /api/library/my-books
+// @access  Private (Student, Teacher)
+const getMyBooks = asyncHandler(async (req, res) => {
+    const { status } = req.query;
+    
+    const query = { student: req.user.id };
+    if (status) query.status = status;
+
+    const issues = await BookIssue.find(query)
+        .populate('book', 'title author isbn publisher category shelfLocation')
+        .populate('issuedBy', 'firstName lastName')
+        .sort({ createdAt: -1 });
+
+    // Calculate summary
+    const currentlyBorrowed = issues.filter(i => i.status === 'issued').length;
+    const totalBorrowed = issues.length;
+    const overdue = issues.filter(i => i.status === 'issued' && new Date(i.dueDate) < new Date()).length;
+    const totalFines = issues.reduce((sum, i) => sum + (i.fine || 0), 0);
+    const unpaidFines = issues.filter(i => i.fine > 0 && !i.finePaid).reduce((sum, i) => sum + i.fine, 0);
+
+    res.json({
+        success: true,
+        data: issues,
+        summary: {
+            currentlyBorrowed,
+            totalBorrowed,
+            overdue,
+            totalFines,
+            unpaidFines,
+        },
+    });
+});
+
+// @desc    Browse available books (for student/teacher)
+// @route   GET /api/library/browse
+// @access  Private (Student, Teacher)
+const browseBooks = asyncHandler(async (req, res) => {
+    const { search, category, department, page = 1, limit = 20 } = req.query;
+    const query = { isActive: true, availableCopies: { $gt: 0 } };
+
+    if (search) {
+        query.$or = [
+            { title: { $regex: search, $options: 'i' } },
+            { author: { $regex: search, $options: 'i' } },
+            { isbn: { $regex: search, $options: 'i' } },
+        ];
+    }
+    if (category) query.category = category;
+    if (department) query.department = department;
+
+    const total = await Book.countDocuments(query);
+    const books = await Book.find(query)
+        .select('title author isbn publisher category department totalCopies availableCopies shelfLocation')
+        .sort({ title: 1 })
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit));
+
+    res.json({
+        success: true,
+        data: books,
+        pagination: {
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / limit),
+        },
+    });
+});
+
+// @desc    Get book details (for student/teacher)
+// @route   GET /api/library/book/:id
+// @access  Private (Student, Teacher)
+const getBookDetails = asyncHandler(async (req, res) => {
+    const book = await Book.findById(req.params.id)
+        .select('title author isbn publisher category department totalCopies availableCopies shelfLocation description');
+
+    if (!book) {
+        return res.status(404).json({
+            success: false,
+            message: 'Book not found',
+        });
+    }
+
+    // Check if user has already borrowed this book
+    const existingIssue = await BookIssue.findOne({
+        book: req.params.id,
+        student: req.user.id,
+        status: 'issued',
+    });
+
+    res.json({
+        success: true,
+        data: {
+            ...book.toObject(),
+            alreadyBorrowed: !!existingIssue,
+        },
+    });
+});
+
 module.exports = {
     getBooks,
     addBook,
@@ -340,4 +439,7 @@ module.exports = {
     returnBook,
     getIssuedBooks,
     getLibraryDashboard,
+    getMyBooks,
+    browseBooks,
+    getBookDetails,
 };

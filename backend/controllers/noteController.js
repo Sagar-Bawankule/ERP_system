@@ -78,7 +78,6 @@ const uploadNote = asyncHandler(async (req, res) => {
     }
 
     const note = await Note.create(noteData);
-    });
 
     res.status(201).json({
         success: true,
@@ -327,6 +326,4 @@ module.exports = {
     deleteNote,
     getNotesBySubject,
     getMyNotes,
-    getMyAssignedNotes,
-    getNoteStats,
 };

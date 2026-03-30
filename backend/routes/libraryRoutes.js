@@ -11,27 +11,34 @@ const {
     returnBook,
     getIssuedBooks,
     getLibraryDashboard,
+    getMyBooks,
+    browseBooks,
+    getBookDetails,
 } = require('../controllers/libraryController');
 
 // All routes require authentication
 router.use(protect);
-router.use(authorize('librarian', 'super_admin', 'admin'));
 
-// Dashboard
-router.get('/dashboard', getLibraryDashboard);
+// Student/Teacher routes (must be before admin routes to avoid conflicts)
+router.get('/my-books', authorize('student', 'teacher'), getMyBooks);
+router.get('/browse', authorize('student', 'teacher'), browseBooks);
+router.get('/book/:id', authorize('student', 'teacher'), getBookDetails);
+
+// Librarian/Admin routes
+router.get('/dashboard', authorize('librarian', 'super_admin', 'admin'), getLibraryDashboard);
 
 // Books CRUD
-router.get('/books', getBooks);
-router.post('/books', addBook);
-router.put('/books/:id', updateBook);
-router.delete('/books/:id', deleteBook);
+router.get('/books', authorize('librarian', 'super_admin', 'admin'), getBooks);
+router.post('/books', authorize('librarian', 'super_admin', 'admin'), addBook);
+router.put('/books/:id', authorize('librarian', 'super_admin', 'admin'), updateBook);
+router.delete('/books/:id', authorize('librarian', 'super_admin', 'admin'), deleteBook);
 
 // Eligible borrowers
-router.get('/eligible-users', getEligibleUsers);
+router.get('/eligible-users', authorize('librarian', 'super_admin', 'admin'), getEligibleUsers);
 
 // Issue / Return
-router.get('/issues', getIssuedBooks);
-router.post('/issue', issueBook);
-router.put('/return/:issueId', returnBook);
+router.get('/issues', authorize('librarian', 'super_admin', 'admin'), getIssuedBooks);
+router.post('/issue', authorize('librarian', 'super_admin', 'admin'), issueBook);
+router.put('/return/:issueId', authorize('librarian', 'super_admin', 'admin'), returnBook);
 
 module.exports = router;

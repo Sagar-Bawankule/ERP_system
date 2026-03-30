@@ -26,6 +26,10 @@ const storage = multer.diskStorage({
             folder = 'gallery';
         } else if (file.fieldname === 'scholarshipDoc') {
             folder = 'scholarships';
+        } else if (file.fieldname === 'assignmentFile') {
+            folder = 'assignments';
+        } else if (file.fieldname === 'submissionFile') {
+            folder = 'submissions';
         }
 
         const uploadPath = createUploadDir(folder);
@@ -96,6 +100,18 @@ const uploadConfig = {
         fileFilter,
         limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     }).array('scholarshipDoc', 10),
+
+    assignmentFile: multer({
+        storage,
+        fileFilter,
+        limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    }).single('assignmentFile'),
+
+    submissionFile: multer({
+        storage,
+        fileFilter,
+        limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    }).single('submissionFile'),
 };
 
 // Middleware wrapper with error handling
@@ -133,4 +149,9 @@ const uploadMiddleware = (type) => {
     };
 };
 
-module.exports = { uploadMiddleware, uploadConfig };
+module.exports = { 
+    uploadMiddleware, 
+    uploadConfig,
+    uploadAssignment: uploadConfig.assignmentFile,
+    uploadSubmission: uploadConfig.submissionFile,
+};

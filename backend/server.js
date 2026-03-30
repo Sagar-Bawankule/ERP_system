@@ -30,6 +30,7 @@ const accountantRoutes = require('./routes/accountantRoutes');
 const communicationsRoutes = require('./routes/communicationsRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
+const assignmentRoutes = require('./routes/assignmentRoutes');
 
 // Initialize Express app
 const app = express();
@@ -93,6 +94,7 @@ app.use('/api/accountant', accountantRoutes);
 app.use('/api/communications', communicationsRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/assignments', assignmentRoutes);
 
 // Root endpoint - API information
 app.get('/', (req, res) => {
