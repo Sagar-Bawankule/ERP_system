@@ -66,6 +66,15 @@ export const teacherService = {
     delete: (id) => api.delete(`/teachers/${id}`),
 };
 
+export const classService = {
+    getAll: (params) => api.get('/classes', { params }),
+    getById: (id) => api.get(`/classes/${id}`),
+    create: (data) => api.post('/classes', data),
+    update: (id, data) => api.put(`/classes/${id}`, data),
+    delete: (id) => api.delete(`/classes/${id}`),
+    getStudents: (id) => api.get(`/classes/${id}/students`),
+};
+
 export const attendanceService = {
     mark: (data) => api.post('/attendance/mark', data),
     getClass: (params) => api.get('/attendance/class', { params }),

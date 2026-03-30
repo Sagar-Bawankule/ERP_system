@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiVideo, FiEdit2, FiTrash2, FiUsers, FiCalendar, FiClock, FiExternalLink, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { meetingService } from '../../services/api';
+import { meetingService, classService } from '../../services/api';
 import '../student/StudentPages.css';
 
 const AdminMeetings = () => {
     const [loading, setLoading] = useState(true);
     const [meetings, setMeetings] = useState([]);
+    const [classes, setClasses] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [selectedMeeting, setSelectedMeeting] = useState(null);
     const [filterStatus, setFilterStatus] = useState('');
@@ -20,6 +21,7 @@ const AdminMeetings = () => {
         scheduledTime: '',
         duration: 60,
         targetingType: 'class',
+        selectedClass: '',
         classDetails: {
             department: '',
             semester: '',
@@ -49,7 +51,17 @@ const AdminMeetings = () => {
 
     useEffect(() => {
         fetchMeetings();
+        fetchClasses();
     }, [filterStatus]);
+
+    const fetchClasses = async () => {
+        try {
+            const res = await classService.getAll();
+            setClasses(res.data.data || []);
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+        }
+    };
 
     const fetchMeetings = async () => {
         setLoading(true);
@@ -72,6 +84,20 @@ const AdminMeetings = () => {
         try {
             // Prepare data based on targeting type
             const meetingData = { ...formData };
+            
+            // If class is selected from dropdown, extract classDetails from it
+            if (formData.targetingType === 'class' && formData.selectedClass) {
+                const selectedClassObj = classes.find(c => c._id === formData.selectedClass);
+                if (selectedClassObj) {
+                    meetingData.classDetails = {
+                        department: selectedClassObj.department,
+                        semester: selectedClassObj.semester,
+                        section: selectedClassObj.section
+                    };
+                }
+            }
+            
+            delete meetingData.selectedClass;
             
             if (formData.targetingType !== 'class') {
                 delete meetingData.classDetails;
@@ -114,6 +140,17 @@ const AdminMeetings = () => {
 
     const openModal = (meeting = null) => {
         if (meeting) {
+            // Find matching class if exists
+            let selectedClassId = '';
+            if (meeting.classDetails && classes.length > 0) {
+                const matchingClass = classes.find(c => 
+                    c.department === meeting.classDetails.department &&
+                    c.semester === meeting.classDetails.semester &&
+                    c.section === meeting.classDetails.section
+                );
+                if (matchingClass) selectedClassId = matchingClass._id;
+            }
+            
             setSelectedMeeting(meeting);
             setFormData({
                 title: meeting.title,
@@ -124,6 +161,7 @@ const AdminMeetings = () => {
                 scheduledTime: meeting.scheduledTime,
                 duration: meeting.duration,
                 targetingType: meeting.targetingType,
+                selectedClass: selectedClassId,
                 classDetails: meeting.classDetails || { department: '', semester: '', section: 'A' },
                 departments: meeting.departments || [],
                 roles: meeting.roles || [],
@@ -140,6 +178,7 @@ const AdminMeetings = () => {
                 scheduledTime: '',
                 duration: 60,
                 targetingType: 'class',
+                selectedClass: '',
                 classDetails: { department: '', semester: '', section: 'A' },
                 departments: [],
                 roles: [],
@@ -388,59 +427,27 @@ const AdminMeetings = () => {
 
                                 {/* Class Targeting */}
                                 {formData.targetingType === 'class' && (
-                                    <div className="form-row">
-                                        <div className="form-group">
-                                            <label className="form-label">Department *</label>
+                                    <div className="form-group">
+                                        <label className="form-label">Select Class *</label>
+                                        {classes.length > 0 ? (
                                             <select
                                                 className="form-select"
-                                                value={formData.classDetails.department}
-                                                onChange={(e) => setFormData({
-                                                    ...formData,
-                                                    classDetails: { ...formData.classDetails, department: e.target.value }
-                                                })}
+                                                value={formData.selectedClass}
+                                                onChange={(e) => setFormData({ ...formData, selectedClass: e.target.value })}
                                                 required
                                             >
-                                                <option value="">Select Department</option>
-                                                {departments.map(dept => (
-                                                    <option key={dept} value={dept}>{dept}</option>
+                                                <option value="">Select Class</option>
+                                                {classes.map(cls => (
+                                                    <option key={cls._id} value={cls._id}>
+                                                        {cls.department} - Sem {cls.semester} - Sec {cls.section} ({cls.academicYear})
+                                                    </option>
                                                 ))}
                                             </select>
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Semester *</label>
-                                            <select
-                                                className="form-select"
-                                                value={formData.classDetails.semester}
-                                                onChange={(e) => setFormData({
-                                                    ...formData,
-                                                    classDetails: { ...formData.classDetails, semester: e.target.value }
-                                                })}
-                                                required
-                                            >
-                                                <option value="">Select</option>
-                                                {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-                                                    <option key={sem} value={sem}>{sem}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Section *</label>
-                                            <select
-                                                className="form-select"
-                                                value={formData.classDetails.section}
-                                                onChange={(e) => setFormData({
-                                                    ...formData,
-                                                    classDetails: { ...formData.classDetails, section: e.target.value }
-                                                })}
-                                            >
-                                                <option value="A">A</option>
-                                                <option value="B">B</option>
-                                                <option value="C">C</option>
-                                                <option value="D">D</option>
-                                            </select>
-                                        </div>
+                                        ) : (
+                                            <div style={{ padding: 'var(--spacing-3)', background: 'var(--warning-light)', borderRadius: 'var(--radius-md)', color: 'var(--warning-dark)' }}>
+                                                <strong>No classes found!</strong> Please create classes in the Classes section first, or use Department/Role targeting.
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -448,9 +455,29 @@ const AdminMeetings = () => {
                                 {formData.targetingType === 'department' && (
                                     <div className="form-group">
                                         <label className="form-label">Select Departments *</label>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div style={{ 
+                                            display: 'grid', 
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
+                                            gap: '12px',
+                                            padding: 'var(--spacing-3)',
+                                            background: 'var(--surface-color)',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: '1px solid var(--border-color)'
+                                        }}>
                                             {departments.map(dept => (
-                                                <label key={dept} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <label 
+                                                    key={dept} 
+                                                    style={{ 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: '8px',
+                                                        cursor: 'pointer',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        transition: 'background 0.2s',
+                                                        ':hover': { background: 'var(--hover-color)' }
+                                                    }}
+                                                >
                                                     <input
                                                         type="checkbox"
                                                         checked={formData.departments.includes(dept)}
@@ -467,8 +494,14 @@ const AdminMeetings = () => {
                                                                 });
                                                             }
                                                         }}
+                                                        style={{ 
+                                                            width: '18px', 
+                                                            height: '18px',
+                                                            cursor: 'pointer',
+                                                            flexShrink: 0
+                                                        }}
                                                     />
-                                                    {dept}
+                                                    <span style={{ fontSize: '0.95rem' }}>{dept}</span>
                                                 </label>
                                             ))}
                                         </div>
@@ -479,9 +512,27 @@ const AdminMeetings = () => {
                                 {formData.targetingType === 'role' && (
                                     <div className="form-group">
                                         <label className="form-label">Select Roles *</label>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            flexDirection: 'column', 
+                                            gap: '12px',
+                                            padding: 'var(--spacing-3)',
+                                            background: 'var(--surface-color)',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: '1px solid var(--border-color)'
+                                        }}>
                                             {roles.map(role => (
-                                                <label key={role.value} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <label 
+                                                    key={role.value} 
+                                                    style={{ 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: '8px',
+                                                        cursor: 'pointer',
+                                                        padding: '8px',
+                                                        borderRadius: '6px'
+                                                    }}
+                                                >
                                                     <input
                                                         type="checkbox"
                                                         checked={formData.roles.includes(role.value)}
@@ -498,8 +549,14 @@ const AdminMeetings = () => {
                                                                 });
                                                             }
                                                         }}
+                                                        style={{ 
+                                                            width: '18px', 
+                                                            height: '18px',
+                                                            cursor: 'pointer',
+                                                            flexShrink: 0
+                                                        }}
                                                     />
-                                                    {role.label}
+                                                    <span style={{ fontSize: '0.95rem' }}>{role.label}</span>
                                                 </label>
                                             ))}
                                         </div>
