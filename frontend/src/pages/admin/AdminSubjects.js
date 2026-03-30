@@ -159,6 +159,10 @@ const AdminSubjects = () => {
                             <option value="Mechanical Engineering">Mechanical Engineering</option>
                             <option value="Civil Engineering">Civil Engineering</option>
                             <option value="Electrical Engineering">Electrical Engineering</option>
+                            <option value="Electronics Engineering">Electronics Engineering</option>
+                            <option value="Information Technology">Information Technology</option>
+                            <option value="Artificial Intelligence">Artificial Intelligence</option>
+                            <option value="Machine Learning">Machine Learning</option>
                         </select>
                     </div>
                 </div>
@@ -266,6 +270,10 @@ const AdminSubjects = () => {
                                         <option value="Mechanical Engineering">Mechanical Engineering</option>
                                         <option value="Civil Engineering">Civil Engineering</option>
                                         <option value="Electrical Engineering">Electrical Engineering</option>
+                                        <option value="Electronics Engineering">Electronics Engineering</option>
+                                        <option value="Information Technology">Information Technology</option>
+                                        <option value="Artificial Intelligence">Artificial Intelligence</option>
+                                        <option value="Machine Learning">Machine Learning</option>
                                     </select>
                                 </div>
                                 <div className="form-group">

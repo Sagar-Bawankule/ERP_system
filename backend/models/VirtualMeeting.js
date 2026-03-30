@@ -61,7 +61,7 @@ const virtualMeetingSchema = new mongoose.Schema({
     classDetails: {
         department: {
             type: String,
-            enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning']
+            enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning']
         },
         semester: {
             type: Number,
@@ -77,7 +77,7 @@ const virtualMeetingSchema = new mongoose.Schema({
     // For department-wide meetings
     departments: [{
         type: String,
-        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning']
+        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning']
     }],
     
     // For role-based meetings (e.g., all parents, all teachers)

@@ -152,7 +152,7 @@ app.get('/api/college-info', (req, res) => {
                 'Electrical Engineering',
                 'Electronics Engineering',
                 'Information Technology',
-                'Artificial Intelligence and Machine Learning',
+                'Artificial Intelligence', 'Machine Learning',
             ],
             courses: ['B.E.', 'B.Tech', 'M.E.', 'M.Tech', 'Diploma'],
             contact: {

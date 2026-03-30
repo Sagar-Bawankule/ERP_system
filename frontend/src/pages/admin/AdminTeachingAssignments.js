@@ -30,7 +30,7 @@ const AdminTeachingAssignments = () => {
         'Electrical Engineering',
         'Electronics Engineering',
         'Information Technology',
-        'Artificial Intelligence and Machine Learning'
+        'Artificial Intelligence', 'Machine Learning'
     ];
 
     useEffect(() => {

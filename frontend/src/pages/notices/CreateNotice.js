@@ -82,7 +82,7 @@ const CreateNotice = () => {
         'Electrical Engineering',
         'Electronics Engineering',
         'Information Technology',
-        'Artificial Intelligence and Machine Learning'
+        'Artificial Intelligence', 'Machine Learning'
     ];
 
     // Semesters for class targeting

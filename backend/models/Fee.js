@@ -8,7 +8,7 @@ const feeStructureSchema = new mongoose.Schema({
     department: {
         type: String,
         required: true,
-        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning', 'All'],
+        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning', 'All'],
     },
     course: {
         type: String,
