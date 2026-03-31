@@ -100,7 +100,6 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
             { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
             { path: `${baseRoute}/users`, icon: FiUsers, label: 'User Management' },
-            { path: `${baseRoute}/roles`, icon: FiSettings, label: 'Roles & Permissions' },
             { path: `/admin/students`, icon: FiUsers, label: 'Students' },
             { path: `/admin/teachers`, icon: FiUsers, label: 'Teachers' },
             { path: `/admin/fees`, icon: FiDollarSign, label: 'Fees' },

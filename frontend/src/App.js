@@ -208,7 +208,6 @@ function App() {
                             <Route path="notices/:id" element={<NoticeDetails />} />
                             <Route path="users" element={<SuperAdminUsers />} />
                             <Route path="create-user" element={<SuperAdminUsers />} />
-                            <Route path="roles" element={<SuperAdminUsers />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
 
