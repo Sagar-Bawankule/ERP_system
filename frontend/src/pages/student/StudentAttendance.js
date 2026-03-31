@@ -18,6 +18,7 @@ const StudentAttendance = () => {
     const [selectedMonth, setSelectedMonth] = useState(
         new Date().toISOString().slice(0, 7) // YYYY-MM format
     );
+    const [sensorCheckModal, setSensorCheckModal] = useState(false);
     const [fingerprintModal, setFingerprintModal] = useState({ show: false, status: 'idle' });
 
     const getRecentMonths = () => {
@@ -69,6 +70,46 @@ const StudentAttendance = () => {
             fetchAttendance();
         }
     }, [profile, selectedMonth, fetchAttendance]);
+
+    const handleFingerprintClick = () => {
+        // Step 1: Show sensor connection check popup
+        setSensorCheckModal(true);
+    };
+
+    const handleSensorConnected = () => {
+        // User confirmed sensor is connected
+        setSensorCheckModal(false);
+        setFingerprintModal({ show: true, status: 'scanning' });
+        
+        // Simulate scan duration (45 seconds as per requirement)
+        setTimeout(async () => {
+            try {
+                await attendanceService.markSelf();
+                setFingerprintModal(prev => ({ ...prev, status: 'success' }));
+                fetchAttendance(); // Refresh the list
+                
+                // Close modal after success
+                setTimeout(() => {
+                    setFingerprintModal({ show: false, status: 'idle' });
+                }, 2000);
+            } catch (error) {
+                console.error('Error marking self attendance:', error);
+                setFingerprintModal(prev => ({ ...prev, status: 'error' }));
+                
+                // Allow retry
+                setTimeout(() => {
+                    setFingerprintModal(prev => ({ ...prev, status: 'idle' }));
+                }, 2500);
+            }
+        }, 45000); // 45 seconds as requested
+    };
+
+    const handleSensorNotConnected = () => {
+        // User clicked No - sensor not connected
+        setSensorCheckModal(false);
+        // Show alert to connect sensor
+        alert('Please connect the fingerprint sensor and try again.');
+    };
 
     const handleFingerprintScan = () => {
         setFingerprintModal({ show: true, status: 'scanning' });
@@ -133,7 +174,7 @@ const StudentAttendance = () => {
                 <div className="header-actions">
                     <button 
                         className="btn btn-primary" 
-                        onClick={() => setFingerprintModal({ show: true, status: 'idle' })} 
+                        onClick={handleFingerprintClick} 
                         style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
                     >
                         <FiCheck /> Fingerprint Attendance
@@ -277,6 +318,50 @@ const StudentAttendance = () => {
                 )}
             </div>
 
+            {/* Sensor Connection Check Modal */}
+            {sensorCheckModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '450px', textAlign: 'center' }}>
+                        <div className="modal-header">
+                            <h2 style={{ width: '100%' }}>🔌 Sensor Connection</h2>
+                            <button 
+                                className="modal-close" 
+                                onClick={() => setSensorCheckModal(false)}
+                            >
+                                <FiX />
+                            </button>
+                        </div>
+                        
+                        <div style={{ padding: '1.5rem 0' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👆</div>
+                            <p style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+                                Is the fingerprint sensor connected?
+                            </p>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                                Sensor must be connected for biometric attendance
+                            </p>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', padding: '1rem 0' }}>
+                            <button 
+                                className="btn btn-success" 
+                                onClick={handleSensorConnected}
+                                style={{ minWidth: '120px', fontSize: '1.05rem' }}
+                            >
+                                ✅ Yes
+                            </button>
+                            <button 
+                                className="btn btn-error" 
+                                onClick={handleSensorNotConnected}
+                                style={{ minWidth: '120px', fontSize: '1.05rem' }}
+                            >
+                                ❌ No
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Fingerprint Modal */}
             {fingerprintModal.show && (
                 <div className="modal-overlay">
@@ -321,7 +406,7 @@ const StudentAttendance = () => {
                             <div className="fingerprint-status-text">
                                 {fingerprintModal.status === 'idle' && "Tap the sensor to scan"}
                                 {fingerprintModal.status === 'scanning' && "Scanning biometric data..."}
-                                {fingerprintModal.status === 'success' && <span style={{ color: 'var(--success)' }}>Attendance Marked Successfully!</span>}
+                                {fingerprintModal.status === 'success' && <span style={{ color: 'var(--success)' }}>✅ Deshmukh Sangram - Attendance Marked!</span>}
                                 {fingerprintModal.status === 'error' && <span style={{ color: 'var(--error)' }}>Verification Failed. Try Again.</span>}
                             </div>
                         </div>
