@@ -20,14 +20,14 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect);
 
 // Admin only routes
-router.get('/', authorize('admin'), getAllFees);
+router.get('/', authorize('admin', 'accountant'), getAllFees);
 router.post('/structure', authorize('admin'), createFeeStructure);
-router.get('/structures', authorize('admin'), getFeeStructures);
+router.get('/structures', authorize('admin', 'accountant'), getFeeStructures);
 router.put('/structure/:id', authorize('admin'), updateFeeStructure);
 router.post('/assign', authorize('admin'), assignFeeToStudent);
 router.post('/assign-missing', authorize('admin'), assignMissingFeesToAll);
-router.get('/analytics', authorize('admin'), getFeeAnalytics);
-router.get('/overdue', authorize('admin'), getOverdueFees);
+router.get('/analytics', authorize('admin', 'accountant'), getFeeAnalytics);
+router.get('/overdue', authorize('admin', 'accountant'), getOverdueFees);
 
 // Payment routes
 router.post('/payment', protect, makePayment);

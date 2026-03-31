@@ -10,16 +10,21 @@ const StudentMarks = () => {
     const [marks, setMarks] = useState([]);
     const [summary, setSummary] = useState({ cgpa: 0, totalCredits: 0, backlogs: 0 });
 
-    const setDemoData = useCallback(() => {
-        setMarks([
-            { _id: '1', subject: { name: 'Database Management Systems', code: 'CS301', credits: 4 }, examType: 'End Semester', marksObtained: 78, maxMarks: 100, grade: 'A', isPassed: true, semester: 5, academicYear: '2024-25' },
-            { _id: '2', subject: { name: 'Operating Systems', code: 'CS302', credits: 4 }, examType: 'End Semester', marksObtained: 65, maxMarks: 100, grade: 'B+', isPassed: true, semester: 5, academicYear: '2024-25' },
-            { _id: '3', subject: { name: 'Computer Networks', code: 'CS303', credits: 3 }, examType: 'End Semester', marksObtained: 82, maxMarks: 100, grade: 'A+', isPassed: true, semester: 5, academicYear: '2024-25' },
-            { _id: '4', subject: { name: 'Data Structures', code: 'CS201', credits: 4 }, examType: 'End Semester', marksObtained: 72, maxMarks: 100, grade: 'A', isPassed: true, semester: 3, academicYear: '2023-24' },
-            { _id: '5', subject: { name: 'Object Oriented Programming', code: 'CS202', credits: 4 }, examType: 'End Semester', marksObtained: 58, maxMarks: 100, grade: 'B', isPassed: true, semester: 3, academicYear: '2023-24' },
-        ]);
-        setSummary({ cgpa: 8.2, totalCredits: 19, backlogs: 0 });
-        setLoading(false);
+    const calculateSummary = useCallback((marksData) => {
+        const totalCredits = marksData.reduce((sum, m) => sum + (m.subject?.credits || 0), 0);
+        const backlogs = marksData.filter(m => m.status === 'Fail' || !(m.status === 'Pass' || m.isPassed)).length;
+        const gradePoints = { O: 10, 'A+': 10, A: 9, 'B+': 8, B: 7, C: 6, D: 5, F: 0, AB: 0 };
+
+        let weightedPoints = 0;
+        let weightedCredits = 0;
+        marksData.forEach((m) => {
+            const credits = m.subject?.credits || 0;
+            weightedPoints += (gradePoints[m.grade] || 0) * credits;
+            weightedCredits += credits;
+        });
+
+        const cgpa = weightedCredits > 0 ? (weightedPoints / weightedCredits).toFixed(2) : 0;
+        setSummary({ cgpa, totalCredits, backlogs });
     }, []);
 
     const fetchMarks = useCallback(async () => {
@@ -36,20 +41,22 @@ const StudentMarks = () => {
                 }))
             );
             setMarks(flatMarks);
+            calculateSummary(flatMarks);
         } catch (error) {
             console.error('Error fetching marks:', error);
-            setDemoData();
+            setMarks([]);
+            setSummary({ cgpa: 0, totalCredits: 0, backlogs: 0 });
         }
         setLoading(false);
-    }, [profile, setDemoData]);
+    }, [profile, calculateSummary]);
 
     useEffect(() => {
         if (profile?._id) {
             fetchMarks();
         } else {
-            setDemoData();
+            setLoading(false);
         }
-    }, [profile, fetchMarks, setDemoData]);
+    }, [profile, fetchMarks]);
 
     const groupedBySemester = marks.reduce((acc, mark) => {
         const sem = mark.semester || 'Other';

@@ -28,7 +28,7 @@ const bookSchema = new mongoose.Schema({
     },
     department: {
         type: String,
-        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning', 'General'],
+        enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning', 'General'],
         default: 'General',
     },
     totalCopies: {

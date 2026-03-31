@@ -26,8 +26,8 @@ router.get('/analytics', authorize('admin'), getMeetingAnalytics);
 // Teacher routes
 router.get('/my-meetings', authorize('teacher'), getMyMeetings);
 
-// Student routes
-router.get('/upcoming', authorize('student'), getUpcomingMeetings);
+// Student & Parent routes
+router.get('/upcoming', authorize('student', 'parent'), getUpcomingMeetings);
 
 // Common routes
 router.get('/:id', getMeeting);

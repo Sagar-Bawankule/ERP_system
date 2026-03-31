@@ -20,37 +20,19 @@ const StudentAttendance = () => {
     );
     const [fingerprintModal, setFingerprintModal] = useState({ show: false, status: 'idle' });
 
-    const setDemoData = useCallback(() => {
-        // Demo attendance data for visualization
-        const demoAttendance = [];
-        const today = new Date();
-        for (let i = 30; i >= 1; i--) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            if (date.getDay() !== 0 && date.getDay() !== 6) { // Skip weekends
-                demoAttendance.push({
-                    _id: `demo-${i}`,
-                    date: date.toISOString(),
-                    status: Math.random() > 0.15 ? 'Present' : Math.random() > 0.5 ? 'Absent' : 'Late',
-                    subject: { name: ['Database Management', 'Operating Systems', 'Machine Learning', 'Web Development'][Math.floor(Math.random() * 4)], code: 'CS30' + Math.floor(Math.random() * 9) },
-                });
-            }
+    const getRecentMonths = () => {
+        const result = [];
+        const now = new Date();
+        for (let i = 0; i < 6; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            result.push({ value, label });
         }
-        setAttendance(demoAttendance);
+        return result;
+    };
 
-        const present = demoAttendance.filter(a => a.status === 'Present').length;
-        const late = demoAttendance.filter(a => a.status === 'Late').length;
-        const absent = demoAttendance.filter(a => a.status === 'Absent').length;
-        const total = demoAttendance.length;
-
-        setSummary({
-            total,
-            present: present + late,
-            absent,
-            late,
-            percentage: Math.round(((present + late) / total) * 100),
-        });
-    }, []);
+    const months = getRecentMonths();
 
     const fetchAttendance = useCallback(async () => {
         setLoading(true);
@@ -70,11 +52,17 @@ const StudentAttendance = () => {
             });
         } catch (error) {
             console.error('Error fetching attendance:', error);
-            // Set demo data if API fails
-            setDemoData();
+            setAttendance([]);
+            setSummary({
+                total: 0,
+                present: 0,
+                absent: 0,
+                late: 0,
+                percentage: 0,
+            });
         }
         setLoading(false);
-    }, [profile, selectedMonth, setDemoData]);
+    }, [profile, selectedMonth]);
 
     useEffect(() => {
         if (profile?._id) {
@@ -125,14 +113,6 @@ const StudentAttendance = () => {
             default: return 'badge-info';
         }
     };
-
-    const months = [
-        { value: '2024-12', label: 'December 2024' },
-        { value: '2024-11', label: 'November 2024' },
-        { value: '2024-10', label: 'October 2024' },
-        { value: '2024-09', label: 'September 2024' },
-        { value: '2024-08', label: 'August 2024' },
-    ];
 
     if (loading) {
         return (

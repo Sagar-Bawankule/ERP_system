@@ -27,6 +27,7 @@ import StudentLeave from './pages/student/StudentLeave';
 import StudentScholarship from './pages/student/StudentScholarship';
 import StudentProfile from './pages/student/StudentProfile';
 import StudentMeetings from './pages/student/StudentMeetings';
+import StudentLibrary from './pages/student/StudentLibrary';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -35,6 +36,7 @@ import TeacherMarks from './pages/teacher/TeacherMarks';
 import TeacherNotes from './pages/teacher/TeacherNotes';
 import TeacherStudents from './pages/teacher/TeacherStudents';
 import TeacherMeetings from './pages/teacher/TeacherMeetings';
+import TeacherLibrary from './pages/teacher/TeacherLibrary';
 
 // Parent Pages
 import {
@@ -124,6 +126,7 @@ function App() {
                             <Route path="notes" element={<StudentNotes />} />
                             <Route path="leave" element={<StudentLeave />} />
                             <Route path="scholarship" element={<StudentScholarship />} />
+                            <Route path="library" element={<StudentLibrary />} />
                             <Route path="meetings" element={<StudentMeetings />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
@@ -142,6 +145,7 @@ function App() {
                             <Route path="attendance" element={<TeacherAttendance />} />
                             <Route path="marks" element={<TeacherMarks />} />
                             <Route path="notes" element={<TeacherNotes />} />
+                            <Route path="library" element={<TeacherLibrary />} />
                             <Route path="students" element={<TeacherStudents />} />
                             <Route path="meetings" element={<TeacherMeetings />} />
                             <Route path="profile" element={<StudentProfile />} />

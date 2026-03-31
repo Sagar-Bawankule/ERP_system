@@ -31,7 +31,7 @@ Answer questions about:
 - Teacher portal: marking attendance, uploading notes, entering marks
 - Parent portal: monitoring ward's attendance, fees, marks
 - Admin dashboard: student management, fees, analytics
-- The college has 8 departments: Computer Engineering, Mechanical Engineering, Civil Engineering, Electrical Engineering, Electronics Engineering, Information Technology, Artificial Intelligence, Machine Learning
+- The college has 7 departments: Computer Engineering, Mechanical Engineering, Civil Engineering, Electrical Engineering, Electronics Engineering, Information Technology, Artificial Intelligence and Machine Learning
 - The college has 2500+ students, 95% placement rate, 15+ years of excellence
 Keep answers short, friendly and helpful. If asked something unrelated to the college/ERP, politely redirect.
 
@@ -40,6 +40,36 @@ CRITICAL FORMATTING RULES:
 - Use simple dashes (-) for lists, not asterisks
 - Do not use **bold**, *italic*, or any markdown syntax
 - Write in a natural, conversational style`;
+
+function getLocalFallbackResponse(userMessage = '') {
+    const text = userMessage.toLowerCase();
+
+    if (text.includes('attendance') || text.includes('hajeri')) {
+        return 'To check attendance: Student -> Attendance page. Teachers mark attendance from Teacher Portal -> Attendance. If attendance is not visible, refresh once and select the current month.';
+    }
+
+    if (text.includes('marks') || text.includes('result')) {
+        return 'Marks are available in Student -> Marks & Results. Parents can check ward marks from Parent -> Academic Performance. Teachers enter marks from Teacher -> Marks Entry.';
+    }
+
+    if (text.includes('fees') || text.includes('payment')) {
+        return 'For fees, open Student/Parent -> Fees. You can view paid, pending, and due details there. For corrections, contact the admin/accountant desk.';
+    }
+
+    if (text.includes('note') || text.includes('study material') || text.includes('download')) {
+        return 'Study materials are available in Student -> Study Materials. If download fails, please try again after refresh. Teachers can upload from Teacher -> Upload Notes.';
+    }
+
+    if (text.includes('leave') || text.includes('application')) {
+        return 'Students can apply leave from Student -> Leave. Parents can track leave status from Parent -> Leave. Admin reviews and approves/rejects requests.';
+    }
+
+    if (text.includes('meeting') || text.includes('virtual class')) {
+        return 'Virtual class links are available under Virtual Classes/Meetings section. Teachers can create meetings from Teacher -> Virtual Classes.';
+    }
+
+    return 'I can help with ERP features like attendance, marks, fees, study materials, leave, meetings, and admin workflows. Please tell me what you want to do.';
+}
 
 // @desc    Send message to chatbot
 // @route   POST /api/chatbot/chat
@@ -62,11 +92,15 @@ const sendChatMessage = asyncHandler(async (req, res) => {
         });
     }
 
-    // Check if API key is configured
+    // If API key is missing, serve local fallback response
     if (!process.env.GEMINI_API_KEY) {
-        return res.status(503).json({
-            success: false,
-            message: 'Chatbot service is currently unavailable'
+        return res.json({
+            success: true,
+            data: {
+                message: getLocalFallbackResponse(message),
+                timestamp: new Date(),
+                source: 'local-fallback'
+            }
         });
     }
 
@@ -101,11 +135,14 @@ const sendChatMessage = asyncHandler(async (req, res) => {
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             console.error('Gemini API error:', response.status, errorData);
-            
-            // Don't expose API errors to client
-            return res.status(503).json({
-                success: false,
-                message: 'Sorry, I\'m having trouble responding right now. Please try again later.'
+
+            return res.json({
+                success: true,
+                data: {
+                    message: getLocalFallbackResponse(message),
+                    timestamp: new Date(),
+                    source: 'local-fallback'
+                }
             });
         }
 
@@ -132,17 +169,25 @@ const sendChatMessage = asyncHandler(async (req, res) => {
                 }
             });
         } else {
-            res.status(503).json({
-                success: false,
-                message: 'Sorry, I couldn\'t generate a response. Please try again.'
+            res.json({
+                success: true,
+                data: {
+                    message: getLocalFallbackResponse(message),
+                    timestamp: new Date(),
+                    source: 'local-fallback'
+                }
             });
         }
 
     } catch (error) {
         console.error('Chatbot error:', error);
-        res.status(503).json({
-            success: false,
-            message: 'Sorry, I\'m having trouble responding right now. Please try again later.'
+        res.json({
+            success: true,
+            data: {
+                message: getLocalFallbackResponse(message),
+                timestamp: new Date(),
+                source: 'local-fallback'
+            }
         });
     }
 });

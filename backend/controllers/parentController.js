@@ -7,6 +7,9 @@ const { Fee } = require('../models/Fee');
 const LeaveApplication = require('../models/LeaveApplication');
 const { asyncHandler } = require('../middleware/errorHandler');
 
+const hasParentAccessToStudent = (parent, studentId) =>
+    parent.students.some(id => id.toString() === studentId);
+
 // @desc    Get all parents
 // @route   GET /api/parents
 // @access  Private (Admin)
@@ -226,7 +229,7 @@ const getWardAttendance = asyncHandler(async (req, res) => {
     }
 
     // Check if student belongs to this parent
-    if (!parent.students.includes(req.params.studentId)) {
+    if (!hasParentAccessToStudent(parent, req.params.studentId)) {
         return res.status(403).json({
             success: false,
             message: 'Not authorized to view this student data',
@@ -265,7 +268,7 @@ const getWardFees = asyncHandler(async (req, res) => {
         });
     }
 
-    if (!parent.students.includes(req.params.studentId)) {
+    if (!hasParentAccessToStudent(parent, req.params.studentId)) {
         return res.status(403).json({
             success: false,
             message: 'Not authorized to view this student data',
@@ -295,7 +298,7 @@ const getWardMarks = asyncHandler(async (req, res) => {
         });
     }
 
-    if (!parent.students.includes(req.params.studentId)) {
+    if (!hasParentAccessToStudent(parent, req.params.studentId)) {
         return res.status(403).json({
             success: false,
             message: 'Not authorized to view this student data',
@@ -324,7 +327,7 @@ const getWardLeaves = asyncHandler(async (req, res) => {
         });
     }
 
-    if (!parent.students.includes(req.params.studentId)) {
+    if (!hasParentAccessToStudent(parent, req.params.studentId)) {
         return res.status(403).json({
             success: false,
             message: 'Not authorized to view this student data',

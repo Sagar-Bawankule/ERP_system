@@ -42,6 +42,7 @@ const AdminFees = () => {
             setFees(res.data.data || []);
         } catch (error) {
             console.error('Error fetching fees:', error);
+            toast.error(error.response?.data?.message || 'Failed to load fee records');
             setFees([]);
         }
         setLoading(false);

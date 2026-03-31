@@ -33,35 +33,6 @@ const ParentMarks = () => {
         setSummary({ cgpa, totalCredits, backlogs, passed });
     }, []);
 
-    const setDemoData = useCallback(() => {
-        const demoWards = [{
-            student: {
-                id: 'demo-1',
-                name: 'John Smith',
-                rollNumber: 'CS2021001',
-                department: 'Computer Science',
-                semester: 5,
-            }
-        }];
-        setWardsData(demoWards);
-        setSelectedWard(demoWards[0]);
-    }, []);
-
-    const setDemoMarks = useCallback(() => {
-        const demoMarks = [
-            { _id: '1', subject: { name: 'Database Management Systems', code: 'CS301', credits: 4 }, examType: 'End Semester', marksObtained: 78, maxMarks: 100, grade: 'A', status: 'Pass', semester: 5, academicYear: '2024-25' },
-            { _id: '2', subject: { name: 'Operating Systems', code: 'CS302', credits: 4 }, examType: 'End Semester', marksObtained: 65, maxMarks: 100, grade: 'B+', status: 'Pass', semester: 5, academicYear: '2024-25' },
-            { _id: '3', subject: { name: 'Computer Networks', code: 'CS303', credits: 3 }, examType: 'End Semester', marksObtained: 82, maxMarks: 100, grade: 'A+', status: 'Pass', semester: 5, academicYear: '2024-25' },
-            { _id: '4', subject: { name: 'Machine Learning', code: 'CS304', credits: 4 }, examType: 'End Semester', marksObtained: 71, maxMarks: 100, grade: 'A', status: 'Pass', semester: 5, academicYear: '2024-25' },
-            { _id: '5', subject: { name: 'Data Structures', code: 'CS201', credits: 4 }, examType: 'End Semester', marksObtained: 72, maxMarks: 100, grade: 'A', status: 'Pass', semester: 3, academicYear: '2023-24' },
-            { _id: '6', subject: { name: 'Object Oriented Programming', code: 'CS202', credits: 4 }, examType: 'End Semester', marksObtained: 58, maxMarks: 100, grade: 'B', status: 'Pass', semester: 3, academicYear: '2023-24' },
-            { _id: '7', subject: { name: 'Discrete Mathematics', code: 'CS203', credits: 3 }, examType: 'End Semester', marksObtained: 45, maxMarks: 100, grade: 'C', status: 'Pass', semester: 3, academicYear: '2023-24' },
-        ];
-        setMarks(demoMarks);
-        calculateSummary(demoMarks);
-        setLoading(false);
-    }, [calculateSummary]);
-
     const fetchWardsData = useCallback(async () => {
         try {
             const res = await parentService.getWardDashboard();
@@ -72,9 +43,10 @@ const ParentMarks = () => {
             }
         } catch (error) {
             console.error('Error fetching wards:', error);
-            setDemoData();
+            setWardsData([]);
+            setSelectedWard(null);
         }
-    }, [setDemoData]);
+    }, []);
 
     const fetchMarks = useCallback(async () => {
         setLoading(true);
@@ -85,10 +57,11 @@ const ParentMarks = () => {
             calculateSummary(marksData);
         } catch (error) {
             console.error('Error fetching marks:', error);
-            setDemoMarks();
+            setMarks([]);
+            calculateSummary([]);
         }
         setLoading(false);
-    }, [selectedWard, calculateSummary, setDemoMarks]);
+    }, [selectedWard, calculateSummary]);
 
     useEffect(() => {
         fetchWardsData();

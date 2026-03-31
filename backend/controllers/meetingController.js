@@ -1,5 +1,6 @@
 const VirtualMeeting = require('../models/VirtualMeeting');
 const Student = require('../models/Student');
+const Parent = require('../models/Parent');
 const Teacher = require('../models/Teacher');
 const User = require('../models/User');
 const { asyncHandler } = require('../middleware/errorHandler');
@@ -141,28 +142,32 @@ const getMyMeetings = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Get upcoming meetings for student
+// @desc    Get upcoming meetings for student/parent
 // @route   GET /api/meetings/upcoming
-// @access  Private (Student)
+// @access  Private (Student, Parent)
 const getUpcomingMeetings = asyncHandler(async (req, res) => {
-    const student = await Student.findOne({ user: req.user.id });
-
-    if (!student) {
-        return res.status(404).json({
-            success: false,
-            message: 'Student profile not found'
-        });
-    }
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Find meetings targeted to this student
-    const meetings = await VirtualMeeting.find({
+    const baseQuery = {
         scheduledDate: { $gte: today },
         status: { $in: ['Scheduled', 'Ongoing'] },
-        isActive: true,
-        $or: [
+        isActive: true
+    };
+
+    let targetingQuery = [];
+
+    if (req.user.role === 'student') {
+        const student = await Student.findOne({ user: req.user.id });
+
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: 'Student profile not found'
+            });
+        }
+
+        targetingQuery = [
             // Class-specific
             {
                 targetingType: 'class',
@@ -185,7 +190,79 @@ const getUpcomingMeetings = asyncHandler(async (req, res) => {
                 targetingType: 'individuals',
                 individuals: req.user.id
             }
-        ]
+        ];
+    } else if (req.user.role === 'parent') {
+        const parent = await Parent.findOne({ user: req.user.id }).select('students');
+
+        if (!parent) {
+            return res.status(404).json({
+                success: false,
+                message: 'Parent profile not found'
+            });
+        }
+
+        if (parent.students.length > 0) {
+            const wards = await Student.find({
+                _id: { $in: parent.students },
+                isActive: true
+            })
+                .select('department semester section')
+                .lean();
+
+            const wardDepartments = [...new Set(wards.map(ward => ward.department).filter(Boolean))];
+
+            targetingQuery = [
+                // Parent role meetings
+                {
+                    targetingType: 'role',
+                    roles: 'parent'
+                },
+                // All-student role meetings (visible for ward tracking)
+                {
+                    targetingType: 'role',
+                    roles: 'student'
+                },
+                // Individual targeting to logged-in parent
+                {
+                    targetingType: 'individuals',
+                    individuals: req.user.id
+                },
+                // Department-wide meetings for linked wards
+                ...(wardDepartments.length > 0 ? [{
+                    targetingType: 'department',
+                    departments: { $in: wardDepartments }
+                }] : []),
+                // Class-specific meetings for linked wards
+                ...wards.map(ward => ({
+                    targetingType: 'class',
+                    'classDetails.department': ward.department,
+                    'classDetails.semester': ward.semester,
+                    'classDetails.section': ward.section
+                }))
+            ];
+        } else {
+            targetingQuery = [
+                {
+                    targetingType: 'role',
+                    roles: 'parent'
+                },
+                {
+                    targetingType: 'individuals',
+                    individuals: req.user.id
+                }
+            ];
+        }
+    } else {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized to access upcoming meetings'
+        });
+    }
+
+    // Find meetings targeted to the current user context
+    const meetings = await VirtualMeeting.find({
+        ...baseQuery,
+        $or: targetingQuery
     })
         .populate('subject', 'name code')
         .populate({

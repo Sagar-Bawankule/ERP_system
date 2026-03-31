@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FiFileText, FiDownload, FiBook, FiSearch } from 'react-icons/fi';
 import { noteService } from '../../services/api';
+import { toast } from 'react-toastify';
 import './StudentPages.css';
 
 const StudentNotes = () => {
+    const backendBaseUrl = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
     const [loading, setLoading] = useState(true);
     const [notes, setNotes] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -33,6 +35,30 @@ const StudentNotes = () => {
     useEffect(() => {
         fetchNotes();
     }, [fetchNotes]);
+
+    const handleDownload = async (noteId) => {
+        try {
+            const res = await noteService.download(noteId);
+            if (!res.data?.success) {
+                toast.error('Download failed');
+                return;
+            }
+
+            const { downloadUrl, filename } = res.data.data;
+            const link = document.createElement('a');
+            link.href = `${backendBaseUrl}${downloadUrl}`;
+            link.target = '_blank';
+            link.download = filename || 'download';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            fetchNotes();
+        } catch (error) {
+            console.error('Error downloading note:', error);
+            toast.error(error.response?.data?.message || 'Failed to download file');
+        }
+    };
 
     const filteredNotes = notes.filter(note => {
         const matchesSearch = note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -125,7 +151,10 @@ const StudentNotes = () => {
                                     <FiDownload style={{ marginRight: 4 }} />
                                     {note.downloads} downloads
                                 </span>
-                                <button className="btn btn-primary btn-sm">
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => handleDownload(note._id)}
+                                >
                                     <FiDownload /> Download
                                 </button>
                             </div>

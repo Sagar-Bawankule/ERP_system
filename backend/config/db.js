@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ERP_system', {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ERP_System', {
       // Mongoose 6+ doesn't need these options, but they're included for compatibility
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);

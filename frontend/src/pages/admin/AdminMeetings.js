@@ -39,7 +39,7 @@ const AdminMeetings = () => {
         'Electrical Engineering',
         'Electronics Engineering',
         'Information Technology',
-        'Artificial Intelligence', 'Machine Learning'
+        'Artificial Intelligence and Machine Learning'
     ];
 
     const roles = [

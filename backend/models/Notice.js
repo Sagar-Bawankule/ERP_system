@@ -82,13 +82,13 @@ const noticeSchema = new mongoose.Schema({
         // Department-based targeting
         departments: [{
             type: String,
-            enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning']
+            enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning']
         }],
         // Class-based targeting
         classes: [{
             department: {
                 type: String,
-                enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning']
+                enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning']
             },
             semester: {
                 type: Number,
@@ -123,7 +123,7 @@ const noticeSchema = new mongoose.Schema({
             teacherFilters: {
                 departments: [{
                     type: String,
-                    enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning']
+                    enum: ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning']
                 }]
             }
         }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiVideo, FiEdit2, FiTrash2, FiUsers, FiCalendar, FiClock, FiExternalLink, FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { meetingService } from '../../services/api';
+import api, { meetingService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import '../student/StudentPages.css';
 
@@ -43,15 +43,11 @@ const TeacherMeetings = () => {
 
     const fetchAssignments = async () => {
         try {
-            const res = await fetch('/api/teaching-assignments/my-assignments', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            const data = await res.json();
-            setAssignments(data.data || []);
+            const res = await api.get('/teaching-assignments/my-assignments');
+            setAssignments(res.data.data || []);
         } catch (error) {
             console.error('Error fetching assignments:', error);
+            setAssignments([]);
         }
     };
 

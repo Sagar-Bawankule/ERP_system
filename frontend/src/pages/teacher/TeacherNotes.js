@@ -9,6 +9,7 @@ import api from '../../services/api';
 import '../student/StudentPages.css';
 
 const TeacherNotes = () => {
+    const backendBaseUrl = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
     // Active tab: 'notes' or 'assignments'
     const [activeTab, setActiveTab] = useState('notes');
     
@@ -156,7 +157,7 @@ const TeacherNotes = () => {
         try {
             const res = await api.get(`/notes/${note._id}/download`);
             if (res.data.success) {
-                const fileUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${res.data.data.downloadUrl}`;
+                const fileUrl = `${backendBaseUrl}${res.data.data.downloadUrl}`;
                 const link = document.createElement('a');
                 link.href = fileUrl;
                 link.target = '_blank';
@@ -423,25 +424,40 @@ const TeacherNotes = () => {
             {activeTab === 'notes' && (
                 <>
                     {filteredNotes.length > 0 ? (
-                        <div className="materials-grid">
+                        <div className="materials-grid" style={{ display: 'grid', gap: 'var(--spacing-4)' }}>
                             {filteredNotes.map((note) => (
-                                <div key={note._id} className="material-card">
-                                    <div className="material-icon">
+                                <div
+                                    key={note._id}
+                                    className="material-card"
+                                    style={{
+                                        background: 'white',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        padding: 'var(--spacing-4)',
+                                        display: 'flex',
+                                        gap: 'var(--spacing-4)',
+                                        alignItems: 'flex-start',
+                                        boxShadow: 'var(--shadow-sm)'
+                                    }}
+                                >
+                                    <div className="material-icon" style={{ fontSize: '1.3rem', marginTop: '2px' }}>
                                         {getTypeIcon(note.type)}
                                     </div>
                                     <div className="material-content">
-                                        <h3>{note.title}</h3>
-                                        <p className="material-subject">{note.subject?.name || 'Unknown Subject'}</p>
-                                        <div className="material-meta">
+                                        <h3 style={{ margin: '0 0 var(--spacing-1)', lineHeight: 1.3 }}>{note.title}</h3>
+                                        <p className="material-subject" style={{ margin: 0, color: 'var(--text-secondary)' }}>{note.subject?.name || 'Unknown Subject'}</p>
+                                        <div className="material-meta" style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center', marginTop: 'var(--spacing-2)' }}>
                                             <span className="badge badge-info">{note.type}</span>
-                                            <span>{formatFileSize(note.file?.size)}</span>
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{formatFileSize(note.file?.size)}</span>
                                         </div>
-                                        <div className="material-stats">
-                                            <span><FiDownload /> {note.downloads || 0} downloads</span>
-                                            <span>{formatDate(note.createdAt)}</span>
+                                        <div className="material-stats" style={{ display: 'flex', gap: 'var(--spacing-4)', alignItems: 'center', marginTop: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                                            <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', color: 'var(--text-muted)' }}>
+                                                <FiDownload /> {note.downloads || 0} downloads
+                                            </span>
+                                            <span style={{ color: 'var(--text-muted)' }}>{formatDate(note.createdAt)}</span>
                                         </div>
                                     </div>
-                                    <div className="material-actions">
+                                    <div className="material-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
                                         <button className="btn btn-secondary btn-sm" onClick={() => handleDownload(note)}>
                                             <FiDownload /> Download
                                         </button>
@@ -472,12 +488,25 @@ const TeacherNotes = () => {
             {activeTab === 'assignments' && (
                 <>
                     {filteredAssignments.length > 0 ? (
-                        <div className="materials-grid">
+                        <div className="materials-grid" style={{ display: 'grid', gap: 'var(--spacing-4)' }}>
                             {filteredAssignments.map((assignment) => {
                                 const status = getAssignmentStatus(assignment);
                                 return (
-                                    <div key={assignment._id} className="material-card" style={{ borderLeft: `4px solid ${status.color}` }}>
-                                        <div className="material-icon">📝</div>
+                                    <div
+                                        key={assignment._id}
+                                        className="material-card"
+                                        style={{
+                                            borderLeft: `4px solid ${status.color}`,
+                                            background: 'white',
+                                            borderRadius: 'var(--radius-lg)',
+                                            border: '1px solid var(--border-color)',
+                                            padding: 'var(--spacing-4)',
+                                            display: 'flex',
+                                            gap: 'var(--spacing-4)',
+                                            alignItems: 'flex-start'
+                                        }}
+                                    >
+                                        <div className="material-icon" style={{ fontSize: '1.3rem', marginTop: '2px' }}>📝</div>
                                         <div className="material-content">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
                                                 <h3 style={{ margin: 0 }}>{assignment.title}</h3>
@@ -486,18 +515,22 @@ const TeacherNotes = () => {
                                             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 'var(--spacing-1) 0' }}>
                                                 Class: {assignment.class?.name || 'All Classes'}
                                             </p>
-                                            <div className="material-meta">
-                                                <span className="badge" style={{ background: status.color, color: 'white' }}>
+                                            <div className="material-meta" style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                <span className="badge" style={{ background: status.color, color: 'white', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                                     {status.icon} {status.label}
                                                 </span>
-                                                <span><FiCalendar /> Due: {formatDate(assignment.dueDate)}</span>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
+                                                    <FiCalendar /> Due: {formatDate(assignment.dueDate)}
+                                                </span>
                                             </div>
-                                            <div className="material-stats">
-                                                <span><FiUsers /> {assignment.submissionCount || 0} submissions</span>
+                                            <div className="material-stats" style={{ display: 'flex', gap: 'var(--spacing-4)', marginTop: 'var(--spacing-2)', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                    <FiUsers /> {assignment.submissionCount || 0} submissions
+                                                </span>
                                                 <span>Max: {assignment.totalMarks} marks</span>
                                             </div>
                                         </div>
-                                        <div className="material-actions">
+                                        <div className="material-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
                                             <button 
                                                 className="btn btn-primary btn-sm"
                                                 onClick={() => handleViewSubmissions(assignment)}
@@ -822,7 +855,7 @@ const TeacherNotes = () => {
                                             {submission.file && (
                                                 <div style={{ marginTop: 'var(--spacing-2)' }}>
                                                     <a 
-                                                        href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${submission.file.url}`}
+                                                        href={`${backendBaseUrl}${submission.file.url}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="btn btn-secondary btn-sm"

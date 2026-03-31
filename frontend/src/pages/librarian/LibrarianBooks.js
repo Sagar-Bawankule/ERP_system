@@ -16,7 +16,7 @@ const LibrarianBooks = () => {
     });
 
     const categories = ['Textbook', 'Reference', 'Journal', 'Magazine', 'Novel', 'Biography', 'Other'];
-    const departments = ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence', 'Machine Learning', 'General'];
+    const departments = ['Computer Engineering', 'Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'Electronics Engineering', 'Information Technology', 'Artificial Intelligence and Machine Learning', 'General'];
 
     const fetchBooks = useCallback(async () => {
         try {
