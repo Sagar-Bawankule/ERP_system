@@ -14,6 +14,23 @@ const getAllStudents = asyncHandler(async (req, res) => {
     if (department) query.department = department;
     if (semester) query.semester = parseInt(semester);
     if (section) query.section = section;
+    if (search) {
+        const regex = new RegExp(search, 'i');
+        const matchingUsers = await User.find({
+            $or: [
+                { firstName: regex },
+                { lastName: regex },
+                { email: regex },
+                { phone: regex },
+            ],
+        }).select('_id');
+
+        const userIds = matchingUsers.map((u) => u._id);
+        query.$or = [
+            { rollNumber: regex },
+            { user: { $in: userIds } },
+        ];
+    }
 
     const students = await Student.find(query)
         .populate('user', 'firstName lastName email phone profileImage')

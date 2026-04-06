@@ -147,6 +147,8 @@ function App() {
                             <Route path="notes" element={<TeacherNotes />} />
                             <Route path="library" element={<TeacherLibrary />} />
                             <Route path="students" element={<TeacherStudents />} />
+                            <Route path="leave" element={<StudentLeave />} />
+                            <Route path="leaves" element={<AdminLeaves />} />
                             <Route path="meetings" element={<TeacherMeetings />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>
@@ -207,6 +209,7 @@ function App() {
                             <Route path="notices/create" element={<CreateNotice />} />
                             <Route path="notices/:id" element={<NoticeDetails />} />
                             <Route path="users" element={<SuperAdminUsers />} />
+                            <Route path="leaves" element={<AdminLeaves />} />
                             <Route path="create-user" element={<SuperAdminUsers />} />
                             <Route path="profile" element={<StudentProfile />} />
                         </Route>

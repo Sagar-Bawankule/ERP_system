@@ -22,7 +22,8 @@ const ReceptionistDashboard = () => {
             }
         } catch (error) {
             console.error('Error:', error);
-            setStats({ todayEntries: 12, totalInquiries: 45, openComplaints: 3, todayVisitors: 8 });
+            setStats({ todayEntries: 0, totalInquiries: 0, openComplaints: 0, todayVisitors: 0 });
+            setRecentEntries([]);
         }
         setLoading(false);
     };

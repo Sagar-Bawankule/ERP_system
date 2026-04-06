@@ -18,22 +18,32 @@ const AdminReports = () => {
 
     const fetchReportData = async () => {
         try {
-            const res = await api.get('/accountant/dashboard');
-            if (res.data.success) {
-                setStats({
-                    totalIncome: res.data.data.stats?.monthlyIncome || 0,
-                    totalExpense: res.data.data.stats?.monthlyExpense || 0,
-                    totalFees: res.data.data.stats?.monthlyFeeCollection || 0,
-                    totalStudents: 150 // Placeholder
-                });
-            }
+            const [financeRes, adminRes] = await Promise.allSettled([
+                api.get('/accountant/dashboard'),
+                api.get('/admin/dashboard'),
+            ]);
+
+            const financeStats = financeRes.status === 'fulfilled' && financeRes.value.data?.success
+                ? financeRes.value.data.data?.stats || {}
+                : {};
+
+            const adminCounts = adminRes.status === 'fulfilled' && adminRes.value.data?.success
+                ? adminRes.value.data.data?.counts || {}
+                : {};
+
+            setStats({
+                totalIncome: financeStats.monthlyIncome || 0,
+                totalExpense: financeStats.monthlyExpense || 0,
+                totalFees: financeStats.monthlyFeeCollection || 0,
+                totalStudents: adminCounts.students || financeStats.totalStudents || 0,
+            });
         } catch (error) {
             console.error('Error fetching report data:', error);
             setStats({
-                totalIncome: 250000,
-                totalExpense: 180000,
-                totalFees: 350000,
-                totalStudents: 150
+                totalIncome: 0,
+                totalExpense: 0,
+                totalFees: 0,
+                totalStudents: 0
             });
         }
         setLoading(false);

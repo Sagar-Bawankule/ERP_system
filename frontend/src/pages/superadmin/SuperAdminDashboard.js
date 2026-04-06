@@ -34,7 +34,8 @@ const SuperAdminDashboard = () => {
             }
         } catch (error) {
             console.error('Error fetching dashboard:', error);
-            setStats({ totalUsers: 12, activeUsers: 10, inactiveUsers: 2, userCounts: { admin: 1, teacher: 3, student: 5, parent: 2, accountant: 1 } });
+            setStats({ totalUsers: 0, activeUsers: 0, inactiveUsers: 0, userCounts: {} });
+            setRecentUsers([]);
         }
         setLoading(false);
     }, []);

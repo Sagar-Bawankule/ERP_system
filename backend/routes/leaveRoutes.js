@@ -20,10 +20,10 @@ router.post('/', authorize('student', 'teacher'), uploadMiddleware('multipleDocu
 router.get('/my-leaves', getMyLeaves);
 router.put('/:id/cancel', cancelLeave);
 
-// Admin only routes
-router.get('/', authorize('admin'), getAllLeaves);
-router.get('/pending', authorize('admin'), getPendingLeaves);
-router.put('/:id/review', authorize('admin'), reviewLeave);
-router.get('/analytics', authorize('admin'), getLeaveAnalytics);
+// Leave review routes for Teacher/Admin/Super Admin
+router.get('/', authorize('teacher', 'admin', 'super_admin'), getAllLeaves);
+router.get('/pending', authorize('teacher', 'admin', 'super_admin'), getPendingLeaves);
+router.put('/:id/review', authorize('teacher', 'admin', 'super_admin'), reviewLeave);
+router.get('/analytics', authorize('admin', 'super_admin'), getLeaveAnalytics);
 
 module.exports = router;

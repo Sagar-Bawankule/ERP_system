@@ -12,55 +12,6 @@ const ParentAttendance = () => {
     const [summary, setSummary] = useState({ total: 0, present: 0, absent: 0, late: 0, percentage: 0 });
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
-    const setDemoData = useCallback(async () => {
-        try {
-            const res = await parentService.getWardDashboard();
-            const wards = res.data.data || [];
-            setWardsData(wards);
-            if (wards.length > 0) {
-                setSelectedWard(wards[0]);
-            }
-        } catch (error) {
-            console.error('Error fetching wards:', error);
-            setDemoData();
-        }
-    }, []);
-
-    const setDemoAttendance = useCallback(() => {
-        const demoAttendance = [];
-        const today = new Date();
-        for (let i = 25; i >= 1; i--) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            if (date.getDay() !== 0 && date.getDay() !== 6) {
-                demoAttendance.push({
-                    _id: `demo-${i}`,
-                    date: date.toISOString(),
-                    status: Math.random() > 0.12 ? 'Present' : Math.random() > 0.5 ? 'Absent' : 'Late',
-                    subject: {
-                        name: ['Database Management', 'Operating Systems', 'Machine Learning', 'Web Development'][Math.floor(Math.random() * 4)],
-                        code: 'CS30' + Math.floor(Math.random() * 9)
-                    },
-                });
-            }
-        }
-        setAttendance(demoAttendance);
-
-        const present = demoAttendance.filter(a => ['Present', 'Late'].includes(a.status)).length;
-        const absent = demoAttendance.filter(a => a.status === 'Absent').length;
-        const late = demoAttendance.filter(a => a.status === 'Late').length;
-        const total = demoAttendance.length;
-
-        setSummary({
-            total,
-            present,
-            absent,
-            late,
-            percentage: Math.round((present / total) * 100)
-        });
-        setLoading(false);
-    }, []);
-
     const fetchWardsData = useCallback(async () => {
         try {
             const res = await parentService.getWardDashboard();
@@ -71,9 +22,10 @@ const ParentAttendance = () => {
             }
         } catch (error) {
             console.error('Error fetching wards:', error);
-            setDemoData();
+            setWardsData([]);
+            setSelectedWard(null);
         }
-    }, [setDemoData]);
+    }, []);
 
     const fetchAttendance = useCallback(async () => {
         setLoading(true);
@@ -97,10 +49,11 @@ const ParentAttendance = () => {
             });
         } catch (error) {
             console.error('Error fetching attendance:', error);
-            setDemoAttendance();
+            setAttendance([]);
+            setSummary({ total: 0, present: 0, absent: 0, late: 0, percentage: 0 });
         }
         setLoading(false);
-    }, [selectedWard, selectedMonth, setDemoAttendance]);
+    }, [selectedWard, selectedMonth]);
 
     useEffect(() => {
         fetchWardsData();

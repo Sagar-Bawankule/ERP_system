@@ -30,6 +30,8 @@ const storage = multer.diskStorage({
             folder = 'assignments';
         } else if (file.fieldname === 'submissionFile') {
             folder = 'submissions';
+        } else if (file.fieldname === 'faceCapture') {
+            folder = 'attendance';
         }
 
         const uploadPath = createUploadDir(folder);
@@ -112,6 +114,12 @@ const uploadConfig = {
         fileFilter,
         limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
     }).single('submissionFile'),
+
+    faceCapture: multer({
+        storage,
+        fileFilter,
+        limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }).single('faceCapture'),
 };
 
 // Middleware wrapper with error handling

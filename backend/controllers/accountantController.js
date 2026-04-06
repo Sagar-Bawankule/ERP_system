@@ -1,6 +1,7 @@
 const Income = require('../models/Income');
 const Expense = require('../models/Expense');
 const Payment = require('../models/Payment');
+const Student = require('../models/Student');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // ===== INCOME =====
@@ -171,6 +172,7 @@ const getAccountantDashboard = asyncHandler(async (req, res) => {
     // Pending fees count
     const { Fee } = require('../models/Fee');
     const pendingFees = await Fee.countDocuments({ status: 'pending' });
+    const totalStudents = await Student.countDocuments({ isActive: true });
 
     // Recent payments
     const recentPayments = await Payment.find({ status: 'completed' })
@@ -200,6 +202,7 @@ const getAccountantDashboard = asyncHandler(async (req, res) => {
                 monthlyExpense: monthlyExpense[0]?.total || 0,
                 monthlyFeeCollection: monthlyFeeCollection[0]?.total || 0,
                 pendingFees,
+                totalStudents,
             },
             recentPayments,
             incomeByHead,

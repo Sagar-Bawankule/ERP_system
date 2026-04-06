@@ -23,52 +23,12 @@ const ReceptionistInquiries = () => {
     const fetchInquiries = useCallback(async () => {
         try {
             const params = { type: 'admission_inquiry' };
-            if (typeFilter) params.subType = typeFilter;
+            if (typeFilter) params.status = typeFilter;
             const res = await api.get('/front-office', { params });
             if (res.data.success) setInquiries(res.data.data);
         } catch (error) {
             console.error('Error:', error);
-            // Fallback data for demo
-            setInquiries([
-                {
-                    _id: '1',
-                    visitorName: 'Amit Sharma',
-                    phone: '9876543210',
-                    email: 'amit.sharma@email.com',
-                    studentName: 'Rohit Sharma',
-                    courseInterested: 'Computer Engineering',
-                    purpose: 'Admission Information',
-                    description: 'Interested in B.Tech Computer Engineering for academic year 2026-27',
-                    status: 'open',
-                    createdAt: new Date().toISOString(),
-                    followUpDate: new Date(Date.now() + 2*24*60*60*1000).toISOString()
-                },
-                {
-                    _id: '2',
-                    visitorName: 'Sunita Patil',
-                    phone: '9876543211',
-                    email: 'sunita.patil@email.com',
-                    studentName: 'Aarti Patil',
-                    courseInterested: 'Information Technology',
-                    purpose: 'Fee Structure Inquiry',
-                    description: 'Wants to know about fee structure and scholarship opportunities',
-                    status: 'open',
-                    createdAt: new Date(Date.now() - 1*60*60*1000).toISOString(),
-                    followUpDate: new Date(Date.now() + 1*24*60*60*1000).toISOString()
-                },
-                {
-                    _id: '3',
-                    visitorName: 'Rajesh Kumar',
-                    phone: '9876543212',
-                    email: 'rajesh.kumar@email.com',
-                    studentName: 'Priya Kumar',
-                    courseInterested: 'Mechanical Engineering',
-                    purpose: 'Document Requirements',
-                    description: 'Inquiry about required documents for admission process',
-                    status: 'closed',
-                    createdAt: new Date(Date.now() - 2*24*60*60*1000).toISOString()
-                }
-            ]);
+            setInquiries([]);
         }
         setLoading(false);
     }, [typeFilter]);
@@ -90,16 +50,7 @@ const ReceptionistInquiries = () => {
                 fetchInquiries();
             }
         } catch (error) {
-            toast.success('Inquiry recorded (demo)');
-            const newInquiry = {
-                _id: Date.now().toString(),
-                ...formData,
-                status: 'open',
-                createdAt: new Date().toISOString()
-            };
-            setInquiries(prev => [newInquiry, ...prev]);
-            setShowForm(false);
-            resetForm();
+            toast.error(error.response?.data?.message || 'Failed to record inquiry');
         }
     };
 
@@ -110,8 +61,7 @@ const ReceptionistInquiries = () => {
             toast.success('Inquiry deleted');
             fetchInquiries();
         } catch (error) {
-            toast.success('Inquiry deleted (demo)');
-            setInquiries(prev => prev.filter(i => i._id !== id));
+            toast.error(error.response?.data?.message || 'Failed to delete inquiry');
         }
     };
 
@@ -123,10 +73,7 @@ const ReceptionistInquiries = () => {
                 fetchInquiries();
             }
         } catch (error) {
-            toast.success('Inquiry marked as resolved (demo)');
-            setInquiries(prev => prev.map(i =>
-                i._id === id ? {...i, status: 'closed'} : i
-            ));
+            toast.error(error.response?.data?.message || 'Failed to update inquiry');
         }
     };
 

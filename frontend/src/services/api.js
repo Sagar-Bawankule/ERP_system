@@ -79,9 +79,13 @@ export const attendanceService = {
     mark: (data) => api.post('/attendance/mark', data),
     getClass: (params) => api.get('/attendance/class', { params }),
     getStudent: (studentId, params) => api.get(`/attendance/student/${studentId}`, { params }),
-    getSummary: (studentId) => api.get(`/attendance/summary/${studentId}`),
+    getSummary: (studentId, params) => api.get(`/attendance/summary/${studentId}`, { params }),
     getAnalytics: (params) => api.get('/attendance/analytics', { params }),
     markSelf: () => api.post('/attendance/self-mark'),
+    markSelfFace: (data) => api.post('/attendance/self-mark-face', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+    getSensorStatus: () => api.get('/attendance/sensor-status'),
 };
 
 export const feeService = {

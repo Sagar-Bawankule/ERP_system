@@ -17,6 +17,7 @@ const AdminFees = () => {
     // Fee structures
     const [structures, setStructures] = useState([]);
     const [showStructureModal, setShowStructureModal] = useState(false);
+    const [editingStructure, setEditingStructure] = useState(null);
     const [structureForm, setStructureForm] = useState({
         name: '',
         academicYear: '',
@@ -61,17 +62,27 @@ const AdminFees = () => {
         setLoading(false);
     };
 
-    const handleCreateStructure = async (e) => {
+    const handleSaveStructure = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/fees/structure', structureForm);
-            toast.success('Fee structure created successfully!');
-            setShowStructureModal(false);
-            resetStructureForm();
+            const payload = {
+                ...structureForm,
+                totalAmount: Number(structureForm.totalAmount),
+            };
+
+            if (editingStructure) {
+                await api.put(`/fees/structure/${editingStructure._id}`, payload);
+                toast.success('Fee structure updated successfully!');
+            } else {
+                await api.post('/fees/structure', payload);
+                toast.success('Fee structure created successfully!');
+            }
+
+            closeStructureModal();
             fetchStructures();
         } catch (error) {
-            console.error('Error creating structure:', error);
-            toast.error(error.response?.data?.message || 'Failed to create fee structure');
+            console.error('Error saving structure:', error);
+            toast.error(error.response?.data?.message || (editingStructure ? 'Failed to update fee structure' : 'Failed to create fee structure'));
         }
     };
 
@@ -111,6 +122,32 @@ const AdminFees = () => {
             dueDate: '',
             description: '',
         });
+    };
+
+    const closeStructureModal = () => {
+        setShowStructureModal(false);
+        setEditingStructure(null);
+        resetStructureForm();
+    };
+
+    const openCreateStructureModal = () => {
+        setEditingStructure(null);
+        resetStructureForm();
+        setShowStructureModal(true);
+    };
+
+    const openEditStructureModal = (structure) => {
+        setEditingStructure(structure);
+        setStructureForm({
+            name: structure.name || '',
+            academicYear: structure.academicYear || '',
+            department: structure.department || '',
+            semester: structure.semester || '',
+            totalAmount: structure.totalAmount || '',
+            dueDate: structure.dueDate ? new Date(structure.dueDate).toISOString().slice(0, 10) : '',
+            description: structure.description || '',
+        });
+        setShowStructureModal(true);
     };
 
     useEffect(() => {
@@ -156,7 +193,7 @@ const AdminFees = () => {
                 </div>
                 <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
                     {activeTab === 'structures' && (
-                        <button className="btn btn-primary" onClick={() => setShowStructureModal(true)}>
+                        <button className="btn btn-primary" onClick={openCreateStructureModal}>
                             <FiPlus /> Create Fee Structure
                         </button>
                     )}
@@ -393,7 +430,7 @@ const AdminFees = () => {
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                                                <button className="btn btn-secondary btn-sm" title="Edit">
+                                                <button className="btn btn-secondary btn-sm" title="Edit" onClick={() => openEditStructureModal(structure)}>
                                                     <FiEdit />
                                                 </button>
                                                 <button 
@@ -425,13 +462,13 @@ const AdminFees = () => {
 
             {/* Create Fee Structure Modal */}
             {showStructureModal && (
-                <div className="modal-overlay" onClick={() => setShowStructureModal(false)}>
+                <div className="modal-overlay" onClick={closeStructureModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
                         <div className="modal-header">
-                            <h2><FiPlus /> Create Fee Structure</h2>
-                            <button className="modal-close" onClick={() => setShowStructureModal(false)}>×</button>
+                            <h2>{editingStructure ? <><FiEdit /> Edit Fee Structure</> : <><FiPlus /> Create Fee Structure</>}</h2>
+                            <button className="modal-close" onClick={closeStructureModal}>×</button>
                         </div>
-                        <form onSubmit={handleCreateStructure}>
+                        <form onSubmit={handleSaveStructure}>
                             <div className="form-group">
                                 <label className="form-label">Name *</label>
                                 <input
@@ -505,11 +542,11 @@ const AdminFees = () => {
                                 />
                             </div>
                             <div className="form-actions">
-                                <button type="button" className="btn btn-secondary" onClick={() => { setShowStructureModal(false); resetStructureForm(); }}>
+                                <button type="button" className="btn btn-secondary" onClick={closeStructureModal}>
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn btn-primary">
-                                    <FiPlus /> Create Structure
+                                    {editingStructure ? <><FiEdit /> Update Structure</> : <><FiPlus /> Create Structure</>}
                                 </button>
                             </div>
                         </form>

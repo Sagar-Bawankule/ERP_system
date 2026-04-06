@@ -63,6 +63,8 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/attendance`, icon: FiCalendar, label: 'Attendance' },
             { path: `${baseRoute}/marks`, icon: FiBook, label: 'Marks Entry' },
             { path: `${baseRoute}/notes`, icon: FiFileText, label: 'Upload Notes' },
+            { path: `${baseRoute}/leave`, icon: FiCalendar, label: 'Apply Leave' },
+            { path: `${baseRoute}/leaves`, icon: FiCalendar, label: 'Leave Approvals' },
             { path: `${baseRoute}/library`, icon: FiBook, label: 'Library' },
             { path: `${baseRoute}/profile`, icon: FiUser, label: 'Profile' },
         ];
@@ -100,6 +102,7 @@ const DashboardLayout = () => {
             { path: `${baseRoute}/dashboard`, icon: FiHome, label: 'Dashboard' },
             { path: `${baseRoute}/notices`, icon: FiBell, label: 'Notices' },
             { path: `${baseRoute}/users`, icon: FiUsers, label: 'User Management' },
+            { path: `${baseRoute}/leaves`, icon: FiCalendar, label: 'Leave Approvals' },
             { path: `/admin/students`, icon: FiUsers, label: 'Students' },
             { path: `/admin/teachers`, icon: FiUsers, label: 'Teachers' },
             { path: `/admin/fees`, icon: FiDollarSign, label: 'Fees' },

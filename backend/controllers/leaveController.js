@@ -57,6 +57,14 @@ const applyLeave = asyncHandler(async (req, res) => {
         leaveData.student = profile._id;
     } else {
         leaveData.teacher = profile._id;
+        // Teacher leave requires only Admin + Super Admin approvals
+        leaveData.approvalFlow = {
+            teacher: {
+                status: 'Approved',
+                reviewDate: new Date(),
+                remarks: 'Not required for teacher leave',
+            },
+        };
     }
 
     const leave = await LeaveApplication.create(leaveData);
@@ -85,6 +93,9 @@ const getMyLeaves = asyncHandler(async (req, res) => {
 
     const leaves = await LeaveApplication.find(query)
         .populate('reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.teacher.reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.admin.reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.superAdmin.reviewedBy', 'firstName lastName')
         .sort({ createdAt: -1 });
 
     // Calculate summary
@@ -112,12 +123,16 @@ const getAllLeaves = asyncHandler(async (req, res) => {
     const query = {};
     if (status) query.status = status;
     if (applicantType) query.applicantType = applicantType;
+    if (req.user.role === 'teacher') query.applicantType = 'Student';
 
     const leaves = await LeaveApplication.find(query)
         .populate('applicant', 'firstName lastName email role')
         .populate('student', 'rollNumber department semester')
         .populate('teacher', 'employeeId department designation')
         .populate('reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.teacher.reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.admin.reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.superAdmin.reviewedBy', 'firstName lastName')
         .skip((page - 1) * limit)
         .limit(parseInt(limit))
         .sort({ createdAt: -1 });
@@ -140,10 +155,37 @@ const getAllLeaves = asyncHandler(async (req, res) => {
 // @route   GET /api/leave/pending
 // @access  Private (Admin)
 const getPendingLeaves = asyncHandler(async (req, res) => {
-    const leaves = await LeaveApplication.find({ status: 'Pending' })
+    const roleToFlowKey = {
+        teacher: 'teacher',
+        admin: 'admin',
+        super_admin: 'superAdmin',
+    };
+
+    const flowKey = roleToFlowKey[req.user.role];
+    if (!flowKey) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized to view pending leaves',
+        });
+    }
+
+    const query = {
+        status: 'Pending',
+        [`approvalFlow.${flowKey}.status`]: 'Pending',
+    };
+
+    // Teachers should review only student leave applications
+    if (req.user.role === 'teacher') {
+        query.applicantType = 'Student';
+    }
+
+    const leaves = await LeaveApplication.find(query)
         .populate('applicant', 'firstName lastName email role')
         .populate('student', 'rollNumber department semester')
         .populate('teacher', 'employeeId department designation')
+        .populate('approvalFlow.teacher.reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.admin.reviewedBy', 'firstName lastName')
+        .populate('approvalFlow.superAdmin.reviewedBy', 'firstName lastName')
         .sort({ createdAt: 1 });
 
     res.json({
@@ -153,9 +195,9 @@ const getPendingLeaves = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Review leave application
+// @desc    Review leave application (Teacher/Admin/Super Admin)
 // @route   PUT /api/leave/:id/review
-// @access  Private (Admin)
+// @access  Private (Teacher/Admin/Super Admin)
 const reviewLeave = asyncHandler(async (req, res) => {
     const { status, reviewRemarks } = req.body;
 
@@ -182,41 +224,102 @@ const reviewLeave = asyncHandler(async (req, res) => {
         });
     }
 
-    leave.status = status;
+    const roleToFlowKey = {
+        teacher: 'teacher',
+        admin: 'admin',
+        super_admin: 'superAdmin',
+    };
+    const flowKey = roleToFlowKey[req.user.role];
+
+    if (!flowKey) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized to review leave',
+        });
+    }
+
+    if (req.user.role === 'teacher' && leave.applicantType !== 'Student') {
+        return res.status(403).json({
+            success: false,
+            message: 'Teachers can only review student leave applications',
+        });
+    }
+
+    // Ensure default flow exists for older records
+    leave.approvalFlow = leave.approvalFlow || {};
+    leave.approvalFlow.teacher = leave.approvalFlow.teacher || { status: 'Pending' };
+    leave.approvalFlow.admin = leave.approvalFlow.admin || { status: 'Pending' };
+    leave.approvalFlow.superAdmin = leave.approvalFlow.superAdmin || { status: 'Pending' };
+
+    if (leave.approvalFlow[flowKey].status !== 'Pending') {
+        return res.status(400).json({
+            success: false,
+            message: `Already reviewed by ${req.user.role.replace('_', ' ')}`,
+        });
+    }
+
+    leave.approvalFlow[flowKey].status = status;
+    leave.approvalFlow[flowKey].remarks = reviewRemarks;
+    leave.approvalFlow[flowKey].reviewedBy = req.user.id;
+    leave.approvalFlow[flowKey].reviewDate = new Date();
+
+    if (status === 'Rejected') {
+        leave.status = 'Rejected';
+    } else {
+        const requiredApprovals = leave.applicantType === 'Teacher'
+            ? ['admin', 'superAdmin']
+            : ['teacher', 'admin', 'superAdmin'];
+
+        const allApproved = requiredApprovals
+            .every((key) => leave.approvalFlow[key]?.status === 'Approved');
+        leave.status = allApproved ? 'Approved' : 'Pending';
+    }
+
     leave.reviewRemarks = reviewRemarks;
     leave.reviewedBy = req.user.id;
     leave.reviewDate = new Date();
 
     await leave.save();
 
-    // Notify applicant
+    const currentRoleLabel = req.user.role.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+    // Notify applicant for step update
     await Notification.create({
         recipient: leave.applicant,
-        title: `Leave Application ${status}`,
-        message: `Your leave application from ${leave.fromDate.toLocaleDateString()} to ${leave.toDate.toLocaleDateString()} has been ${status.toLowerCase()}. ${reviewRemarks || ''}`,
+        title: `Leave Reviewed by ${currentRoleLabel}`,
+        message: `Your leave application was ${status.toLowerCase()} by ${currentRoleLabel}. Current overall status: ${leave.status}.`,
         type: 'leave',
     });
 
-    // Notify parent if student
-    if (leave.applicantType === 'Student' && leave.student) {
-        const student = await Student.findById(leave.student).populate('parentGuardian');
-        if (student && student.parentGuardian) {
-            const parent = await require('../models/Parent').findById(student.parentGuardian);
-            if (parent) {
-                await Notification.create({
-                    recipient: parent.user,
-                    recipientRole: 'parent',
-                    title: `Ward's Leave ${status}`,
-                    message: `Your ward's leave application has been ${status.toLowerCase()}.`,
-                    type: 'leave',
-                });
+    // Notify applicant and parent on final decision
+    if (leave.status === 'Approved' || leave.status === 'Rejected') {
+        await Notification.create({
+            recipient: leave.applicant,
+            title: `Leave Application ${leave.status}`,
+            message: `Your leave application from ${leave.fromDate.toLocaleDateString()} to ${leave.toDate.toLocaleDateString()} has been ${leave.status.toLowerCase()}. ${reviewRemarks || ''}`,
+            type: 'leave',
+        });
+
+        if (leave.applicantType === 'Student' && leave.student) {
+            const student = await Student.findById(leave.student).populate('parentGuardian');
+            if (student && student.parentGuardian) {
+                const parent = await require('../models/Parent').findById(student.parentGuardian);
+                if (parent) {
+                    await Notification.create({
+                        recipient: parent.user,
+                        recipientRole: 'parent',
+                        title: `Ward's Leave ${leave.status}`,
+                        message: `Your ward's leave application has been ${leave.status.toLowerCase()}.`,
+                        type: 'leave',
+                    });
+                }
             }
         }
     }
 
     res.json({
         success: true,
-        message: `Leave application ${status.toLowerCase()} successfully`,
+        message: `Leave ${status.toLowerCase()} by ${currentRoleLabel}. Overall status: ${leave.status}`,
         data: leave,
     });
 });

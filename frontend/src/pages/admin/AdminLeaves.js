@@ -2,9 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FiCheck, FiX, FiCalendar, FiUser } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import '../student/StudentPages.css';
 
 const AdminLeaves = () => {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [leaves, setLeaves] = useState([]);
     const [filter, setFilter] = useState('Pending');
@@ -15,10 +17,7 @@ const AdminLeaves = () => {
             setLeaves(res.data.data || []);
         } catch (error) {
             console.error('Error fetching leaves:', error);
-            // Demo data
-            setLeaves([
-                { _id: '1', leaveType: 'Sick Leave', fromDate: '2024-12-23', toDate: '2024-12-23', numberOfDays: 1, reason: 'Testing leave', status: 'Pending', applicant: { firstName: 'Rahul', lastName: 'Kumar' }, applicantType: 'Student', createdAt: new Date() },
-            ]);
+            setLeaves([]);
         }
         setLoading(false);
     }, [filter]);
@@ -45,6 +44,33 @@ const AdminLeaves = () => {
         }
     };
 
+    const getRoleFlowKey = () => {
+        if (user?.role === 'super_admin') return 'superAdmin';
+        if (user?.role === 'admin') return 'admin';
+        if (user?.role === 'teacher') return 'teacher';
+        return null;
+    };
+
+    const getApprovalProgress = (leave) => {
+        const flow = leave.approvalFlow || {};
+        const steps = leave.applicantType === 'Teacher'
+            ? ['admin', 'superAdmin']
+            : ['teacher', 'admin', 'superAdmin'];
+        return steps.filter((s) => flow[s]?.status === 'Approved').length;
+    };
+
+    const getTotalApprovalSteps = (leave) => (
+        leave.applicantType === 'Teacher' ? 2 : 3
+    );
+
+    const canCurrentRoleReview = (leave) => {
+        if (leave.status !== 'Pending') return false;
+        const roleKey = getRoleFlowKey();
+        if (!roleKey) return false;
+        const roleStatus = leave.approvalFlow?.[roleKey]?.status || 'Pending';
+        return roleStatus === 'Pending';
+    };
+
     if (loading) {
         return (
             <div className="page-loading">
@@ -59,7 +85,7 @@ const AdminLeaves = () => {
             <div className="page-header">
                 <div>
                     <h1>Leave Applications</h1>
-                    <p>Review and approve leave applications</p>
+                    <p>3-step approvals by Teacher, Admin, and Super Admin</p>
                 </div>
             </div>
 
@@ -91,6 +117,7 @@ const AdminLeaves = () => {
                                     <th>Duration</th>
                                     <th>Reason</th>
                                     <th>Status</th>
+                                    <th>Progress</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -120,7 +147,18 @@ const AdminLeaves = () => {
                                             </span>
                                         </td>
                                         <td>
-                                            {leave.status === 'Pending' ? (
+                                            <div style={{ fontSize: '0.85rem' }}>
+                                                {getApprovalProgress(leave)}/{getTotalApprovalSteps(leave)} approved
+                                                <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>
+                                                    {leave.applicantType === 'Student' && (
+                                                        <>T: {leave.approvalFlow?.teacher?.status || 'Pending'} | </>
+                                                    )}
+                                                    A: {leave.approvalFlow?.admin?.status || 'Pending'} | SA: {leave.approvalFlow?.superAdmin?.status || 'Pending'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {canCurrentRoleReview(leave) ? (
                                                 <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
                                                     <button
                                                         className="btn btn-primary btn-sm"

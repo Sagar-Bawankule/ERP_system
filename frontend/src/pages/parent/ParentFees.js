@@ -11,96 +11,6 @@ const ParentFees = () => {
     const [fees, setFees] = useState([]);
     const [summary, setSummary] = useState({ total: 0, paid: 0, due: 0 });
 
-    const setDemoData = useCallback(async () => {
-        try {
-            const res = await parentService.getWardDashboard();
-            const wards = res.data.data || [];
-            setWardsData(wards);
-            if (wards.length > 0) {
-                setSelectedWard(wards[0]);
-            }
-        } catch (error) {
-            console.error('Error fetching wards:', error);
-            const demoWards = [{
-                student: {
-                    id: 'demo-1',
-                    name: 'John Smith',
-                    rollNumber: 'CS2021001',
-                    department: 'Computer Science',
-                    semester: 5,
-                }
-            }];
-            setWardsData(demoWards);
-            setSelectedWard(demoWards[0]);
-        }
-    }, []);
-
-    const setDemoFees = useCallback(() => {
-        const demoFees = [
-            {
-                _id: '1',
-                name: 'Tuition Fee - Odd Semester 2024-25',
-                feeStructure: { name: 'Tuition Fee' },
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 55000,
-                paidAmount: 55000,
-                dueAmount: 0,
-                status: 'Paid',
-                dueDate: new Date('2024-08-15'),
-                payments: [
-                    { _id: 'p1', amount: 55000, paymentDate: new Date('2024-08-10'), method: 'Online', transactionId: 'TXN123456' }
-                ]
-            },
-            {
-                _id: '2',
-                name: 'Exam Fee - Semester 5',
-                feeStructure: { name: 'Exam Fee' },
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 2700,
-                paidAmount: 0,
-                dueAmount: 2700,
-                status: 'Pending',
-                dueDate: new Date('2024-12-31'),
-                payments: []
-            },
-            {
-                _id: '3',
-                name: 'Library Fee - Annual',
-                feeStructure: { name: 'Library Fee' },
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 1500,
-                paidAmount: 1500,
-                dueAmount: 0,
-                status: 'Paid',
-                dueDate: new Date('2024-09-01'),
-                payments: [
-                    { _id: 'p2', amount: 1500, paymentDate: new Date('2024-08-25'), method: 'Cash', transactionId: 'REC78910' }
-                ]
-            },
-            {
-                _id: '4',
-                name: 'Lab Fee - Computer Science',
-                feeStructure: { name: 'Lab Fee' },
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 5000,
-                paidAmount: 2500,
-                dueAmount: 2500,
-                status: 'Partial',
-                dueDate: new Date('2024-11-30'),
-                payments: [
-                    { _id: 'p3', amount: 2500, paymentDate: new Date('2024-10-15'), method: 'Online', transactionId: 'TXN654321' }
-                ]
-            },
-        ];
-        setFees(demoFees);
-        setSummary({ total: 64200, paid: 59000, due: 5200 });
-        setLoading(false);
-    }, []);
-
     const fetchWardsData = useCallback(async () => {
         try {
             const res = await parentService.getWardDashboard();
@@ -111,9 +21,10 @@ const ParentFees = () => {
             }
         } catch (error) {
             console.error('Error fetching wards:', error);
-            setDemoData();
+            setWardsData([]);
+            setSelectedWard(null);
         }
-    }, [setDemoData]);
+    }, []);
 
     const fetchFees = useCallback(async () => {
         setLoading(true);
@@ -132,10 +43,11 @@ const ParentFees = () => {
             setSummary(calcSummary);
         } catch (error) {
             console.error('Error fetching fees:', error);
-            setDemoFees();
+            setFees([]);
+            setSummary({ total: 0, paid: 0, due: 0 });
         }
         setLoading(false);
-    }, [selectedWard, setDemoFees]);
+    }, [selectedWard]);
 
     useEffect(() => {
         fetchWardsData();

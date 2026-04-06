@@ -42,42 +42,7 @@ const ReceptionistCommunicate = () => {
             }
         } catch (error) {
             console.error('Error:', error);
-            // Fallback demo data
-            setCommunications([
-                {
-                    _id: '1',
-                    type: 'announcement',
-                    subject: 'College Annual Day Celebration',
-                    message: 'Dear students, our annual day celebration is scheduled for March 30th, 2026. All students are requested to participate.',
-                    recipient: 'all_students',
-                    priority: 'high',
-                    status: 'sent',
-                    sentAt: new Date().toISOString(),
-                    recipientCount: 450
-                },
-                {
-                    _id: '2',
-                    type: 'email',
-                    subject: 'Fee Payment Reminder',
-                    message: 'This is a gentle reminder that the semester fee payment is due by March 25th, 2026.',
-                    recipient: 'all_parents',
-                    priority: 'normal',
-                    status: 'sent',
-                    sentAt: new Date(Date.now() - 1*60*60*1000).toISOString(),
-                    recipientCount: 380
-                },
-                {
-                    _id: '3',
-                    type: 'sms',
-                    subject: 'Exam Schedule Released',
-                    message: 'Mid-semester exam schedule has been uploaded on the student portal. Please check.',
-                    recipient: 'all_students',
-                    priority: 'high',
-                    status: 'scheduled',
-                    scheduledFor: new Date(Date.now() + 2*60*60*1000).toISOString(),
-                    recipientCount: 450
-                }
-            ]);
+            setCommunications([]);
         }
         setLoading(false);
     }, []);
@@ -95,17 +60,7 @@ const ReceptionistCommunicate = () => {
                 fetchCommunications();
             }
         } catch (error) {
-            toast.success('Communication sent (demo)');
-            const newComm = {
-                _id: Date.now().toString(),
-                ...formData,
-                status: formData.scheduledFor ? 'scheduled' : 'sent',
-                sentAt: formData.scheduledFor ? null : new Date().toISOString(),
-                recipientCount: getRecipientCount(formData.recipient)
-            };
-            setCommunications(prev => [newComm, ...prev]);
-            setShowForm(false);
-            resetForm();
+            toast.error(error.response?.data?.message || 'Failed to send communication');
         }
     };
 
@@ -118,17 +73,6 @@ const ReceptionistCommunicate = () => {
             priority: 'normal',
             scheduledFor: ''
         });
-    };
-
-    const getRecipientCount = (recipient) => {
-        switch(recipient) {
-            case 'all_students': return 450;
-            case 'all_parents': return 380;
-            case 'all_teachers': return 45;
-            case 'specific_department': return 120;
-            case 'specific_semester': return 80;
-            default: return 0;
-        }
     };
 
     const getTypeIcon = (type) => {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiUsers, FiSearch, FiPhone, FiMail, FiBook, FiCalendar, FiMapPin, FiUser } from 'react-icons/fi';
-import { toast } from 'react-toastify';
+import { FiUsers, FiSearch, FiPhone, FiMail, FiBook, FiUser } from 'react-icons/fi';
 import api from '../../services/api';
 import '../student/StudentPages.css';
 
@@ -20,59 +19,13 @@ const ReceptionistStudentInfo = () => {
         setLoading(true);
         try {
             const params = { search: searchTerm, limit: 20 };
-            const res = await api.get('/admin/students', { params });
+            const res = await api.get('/students', { params });
             if (res.data.success) {
                 setStudents(res.data.data || []);
             }
         } catch (error) {
             console.error('Error:', error);
-            // Fallback demo data
-            setStudents([
-                {
-                    _id: '1',
-                    user: {
-                        firstName: 'Rahul',
-                        lastName: 'Sharma',
-                        email: 'rahul.sharma@student.samarthcollege.edu.in',
-                        phone: '9876543210'
-                    },
-                    rollNumber: 'CS2024001',
-                    department: 'Computer Engineering',
-                    semester: '6th Semester',
-                    year: '3rd Year',
-                    admissionDate: '2022-08-15',
-                    feeStatus: 'Paid',
-                    attendancePercentage: 85,
-                    currentAddress: 'Pune, Maharashtra',
-                    emergencyContact: {
-                        name: 'Mr. Suresh Sharma',
-                        phone: '9876543211',
-                        relation: 'Father'
-                    }
-                },
-                {
-                    _id: '2',
-                    user: {
-                        firstName: 'Priya',
-                        lastName: 'Patil',
-                        email: 'priya.patil@student.samarthcollege.edu.in',
-                        phone: '9876543212'
-                    },
-                    rollNumber: 'IT2024002',
-                    department: 'Information Technology',
-                    semester: '4th Semester',
-                    year: '2nd Year',
-                    admissionDate: '2023-08-15',
-                    feeStatus: 'Pending',
-                    attendancePercentage: 92,
-                    currentAddress: 'Mumbai, Maharashtra',
-                    emergencyContact: {
-                        name: 'Mrs. Sunita Patil',
-                        phone: '9876543213',
-                        relation: 'Mother'
-                    }
-                }
-            ]);
+            setStudents([]);
         }
         setLoading(false);
     }, [searchTerm]);

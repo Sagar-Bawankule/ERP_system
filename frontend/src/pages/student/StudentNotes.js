@@ -11,26 +11,16 @@ const StudentNotes = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('All');
 
-    const setDemoData = useCallback(() => {
-        setNotes([
-            { _id: '1', title: 'DBMS Unit 1 - Introduction to Database', type: 'Notes', subject: { name: 'Database Management Systems', code: 'CS301' }, uploadedBy: { user: { firstName: 'Dr. Rajesh', lastName: 'Sharma' } }, downloads: 45, createdAt: new Date('2024-12-01') },
-            { _id: '2', title: 'OS Process Management', type: 'Notes', subject: { name: 'Operating Systems', code: 'CS302' }, uploadedBy: { user: { firstName: 'Prof. Sunita', lastName: 'Deshmukh' } }, downloads: 38, createdAt: new Date('2024-11-28') },
-            { _id: '3', title: 'Assignment 3 - SQL Queries', type: 'Assignment', subject: { name: 'Database Management Systems', code: 'CS301' }, uploadedBy: { user: { firstName: 'Dr. Rajesh', lastName: 'Sharma' } }, downloads: 52, createdAt: new Date('2024-12-10') },
-            { _id: '4', title: 'Computer Networks Syllabus', type: 'Syllabus', subject: { name: 'Computer Networks', code: 'CS303' }, uploadedBy: { user: { firstName: 'Dr. Amit', lastName: 'Patil' } }, downloads: 89, createdAt: new Date('2024-08-01') },
-            { _id: '5', title: 'Machine Learning Basics', type: 'Notes', subject: { name: 'Machine Learning', code: 'CS401' }, uploadedBy: { user: { firstName: 'Dr. Rajesh', lastName: 'Sharma' } }, downloads: 67, createdAt: new Date('2024-12-15') },
-        ]);
-        setLoading(false);
-    }, []);
-
     const fetchNotes = useCallback(async () => {
         try {
             const res = await noteService.getAll();
             setNotes(res.data.data || []);
         } catch (error) {
-            setDemoData();
+            console.error('Error fetching notes:', error);
+            setNotes([]);
         }
         setLoading(false);
-    }, [setDemoData]);
+    }, []);
 
     useEffect(() => {
         fetchNotes();

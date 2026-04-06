@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiDollarSign, FiCreditCard, FiDownload, FiCalendar } from 'react-icons/fi';
+import { FiDollarSign, FiCreditCard, FiDownload, FiCalendar, FiX } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import { feeService } from '../../services/api';
 import './StudentPages.css';
@@ -9,35 +10,10 @@ const StudentFees = () => {
     const [loading, setLoading] = useState(true);
     const [fees, setFees] = useState([]);
     const [summary, setSummary] = useState({ total: 0, paid: 0, due: 0 });
-
-    const setDemoData = useCallback(() => {
-        setFees([
-            {
-                _id: '1',
-                name: 'Tuition Fee - Odd Semester 2024-25',
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 55000,
-                paidAmount: 55000,
-                dueAmount: 0,
-                status: 'Paid',
-                dueDate: new Date('2024-08-15'),
-            },
-            {
-                _id: '2',
-                name: 'Exam Fee - Semester 5',
-                academicYear: '2024-25',
-                semester: 5,
-                totalAmount: 2700,
-                paidAmount: 0,
-                dueAmount: 2700,
-                status: 'Pending',
-                dueDate: new Date('2024-12-31'),
-            },
-        ]);
-        setSummary({ total: 57700, paid: 55000, due: 2700 });
-        setLoading(false);
-    }, []);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedFee, setSelectedFee] = useState(null);
+    const [paymentAmount, setPaymentAmount] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('cash');
 
     const fetchFees = useCallback(async () => {
         try {
@@ -63,20 +39,73 @@ const StudentFees = () => {
             setSummary(calcSummary);
         } catch (error) {
             console.error('Error fetching fees:', error);
-            setDemoData();
+            setFees([]);
+            setSummary({ total: 0, paid: 0, due: 0 });
         }
         setLoading(false);
-    }, [profile, setDemoData]);
+    }, [profile]);
 
     useEffect(() => {
         if (profile?._id) {
             console.log('Profile available:', profile);
             fetchFees();
         } else {
-            console.log('No profile, using demo data');
-            setDemoData();
+            setFees([]);
+            setSummary({ total: 0, paid: 0, due: 0 });
+            setLoading(false);
         }
-    }, [profile, fetchFees, setDemoData]);
+    }, [profile, fetchFees]);
+
+    const handlePayNow = (fee) => {
+        setSelectedFee(fee);
+        setPaymentAmount(fee.dueAmount.toString());
+        setPaymentMethod('cash');
+        setShowPaymentModal(true);
+    };
+
+    const handlePayment = async (e) => {
+        e.preventDefault();
+        
+        if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+            toast.error('Please enter a valid amount');
+            return;
+        }
+
+        if (parseFloat(paymentAmount) > selectedFee.dueAmount) {
+            toast.error('Payment amount cannot exceed due amount');
+            return;
+        }
+
+        try {
+            const paymentMethodMap = {
+                cash: 'Cash',
+                online: 'Online',
+                card: 'Card',
+                upi: 'UPI',
+                cheque: 'Cheque',
+            };
+
+            const paymentData = {
+                feeId: selectedFee._id,
+                amount: parseFloat(paymentAmount),
+                paymentMethod: paymentMethodMap[paymentMethod] || paymentMethod,
+                transactionId: `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`,
+            };
+
+            const res = await feeService.makePayment(paymentData);
+            
+            if (res.data.success) {
+                toast.success('Payment successful! 🎉');
+                setShowPaymentModal(false);
+                setSelectedFee(null);
+                setPaymentAmount('');
+                fetchFees(); // Refresh fees data
+            }
+        } catch (error) {
+            console.error('Payment error:', error);
+            toast.error(error.response?.data?.message || 'Payment failed. Please try again.');
+        }
+    };
 
     const getStatusClass = (status) => {
         switch (status) {
@@ -177,7 +206,10 @@ const StudentFees = () => {
                                     <FiDownload /> Receipt
                                 </button>
                             ) : (
-                                <button className="btn btn-primary btn-sm">
+                                <button 
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => handlePayNow(fee)}
+                                >
                                     Pay Now
                                 </button>
                             )}
@@ -185,6 +217,102 @@ const StudentFees = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Payment Modal */}
+            {showPaymentModal && selectedFee && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '500px' }}>
+                        <div className="modal-header">
+                            <h2>💳 Pay Fees</h2>
+                            <button 
+                                className="modal-close" 
+                                onClick={() => {
+                                    setShowPaymentModal(false);
+                                    setSelectedFee(null);
+                                    setPaymentAmount('');
+                                }}
+                            >
+                                <FiX />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handlePayment}>
+                            {/* Fee Details */}
+                            <div style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>{selectedFee.name}</h3>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                    Academic Year: {selectedFee.academicYear}
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                    <div>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Total Amount</p>
+                                        <p style={{ fontSize: '1.2rem', fontWeight: '600' }}>₹{selectedFee.totalAmount.toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Due Amount</p>
+                                        <p style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--error)' }}>₹{selectedFee.dueAmount.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Payment Amount */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label className="form-label">Payment Amount *</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={paymentAmount}
+                                    onChange={(e) => setPaymentAmount(e.target.value)}
+                                    placeholder="Enter amount to pay"
+                                    min="1"
+                                    max={selectedFee.dueAmount}
+                                    required
+                                    autoFocus
+                                />
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                    Maximum: ₹{selectedFee.dueAmount.toLocaleString()}
+                                </p>
+                            </div>
+
+                            {/* Payment Method */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label className="form-label">Payment Method *</label>
+                                <select
+                                    className="form-input"
+                                    value={paymentMethod}
+                                    onChange={(e) => setPaymentMethod(e.target.value)}
+                                    required
+                                >
+                                    <option value="cash">Cash</option>
+                                    <option value="online">Online Payment</option>
+                                    <option value="card">Debit/Credit Card</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="cheque">Cheque</option>
+                                </select>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-secondary"
+                                    onClick={() => {
+                                        setShowPaymentModal(false);
+                                        setSelectedFee(null);
+                                        setPaymentAmount('');
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn btn-primary">
+                                    <FiCreditCard style={{ marginRight: '8px' }} />
+                                    Pay ₹{paymentAmount || 0}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

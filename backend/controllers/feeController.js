@@ -226,7 +226,7 @@ const getStudentFees = asyncHandler(async (req, res) => {
 // @route   POST /api/fees/payment
 // @access  Private
 const makePayment = asyncHandler(async (req, res) => {
-    const { feeId, amount, paymentMethod, remarks } = req.body;
+    const { feeId, amount, paymentMethod, remarks, transactionId } = req.body;
 
     const fee = await Fee.findById(feeId);
     if (!fee) {
@@ -243,12 +243,36 @@ const makePayment = asyncHandler(async (req, res) => {
         });
     }
 
+    const paymentMethodMap = {
+        cash: 'Cash',
+        online: 'Online',
+        cheque: 'Cheque',
+        dd: 'DD',
+        upi: 'UPI',
+        card: 'Card',
+        Cash: 'Cash',
+        Online: 'Online',
+        Cheque: 'Cheque',
+        DD: 'DD',
+        UPI: 'UPI',
+        Card: 'Card',
+    };
+
+    const normalizedPaymentMethod = paymentMethodMap[paymentMethod];
+    if (!normalizedPaymentMethod) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid payment method',
+        });
+    }
+
     // Create payment
     const payment = await Payment.create({
         student: fee.student,
         fee: feeId,
+        transactionId: transactionId || `TXN${Date.now()}`,
         amount,
-        paymentMethod,
+        paymentMethod: normalizedPaymentMethod,
         remarks,
         processedBy: req.user.id,
     });

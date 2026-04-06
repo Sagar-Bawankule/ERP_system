@@ -10,8 +10,16 @@ const AdminScholarships = () => {
     const [applications, setApplications] = useState([]);
     const [activeTab, setActiveTab] = useState('scholarships');
     const [showModal, setShowModal] = useState(false);
+    const [editingScholarship, setEditingScholarship] = useState(null);
     const [formData, setFormData] = useState({
-        name: '', description: '', amount: '', eligibilityCriteria: '', applicationDeadline: ''
+        name: '',
+        description: '',
+        type: 'Merit',
+        amount: '',
+        eligibilityCriteria: '',
+        applicationDeadline: '',
+        academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+        isActive: true,
     });
 
     useEffect(() => {
@@ -22,42 +30,98 @@ const AdminScholarships = () => {
         try {
             const [scholarshipsRes, applicationsRes] = await Promise.all([
                 api.get('/scholarships'),
-                api.get('/scholarships/applications').catch(() => ({ data: { data: [] } }))
+                api.get('/scholarships/admin/applications').catch(() => ({ data: { data: [] } })),
             ]);
             setScholarships(scholarshipsRes.data.data || []);
             setApplications(applicationsRes.data.data || []);
         } catch (error) {
-            // Demo data
-            setScholarships([
-                { _id: '1', name: 'Merit Scholarship', description: 'For students with CGPA above 9.0', amount: 25000, eligibilityCriteria: 'CGPA > 9.0', applicationDeadline: '2024-12-31', applicantCount: 15, status: 'Active' },
-                { _id: '2', name: 'Need-Based Scholarship', description: 'Financial assistance for deserving students', amount: 15000, eligibilityCriteria: 'Family income < 3 LPA', applicationDeadline: '2024-12-31', applicantCount: 28, status: 'Active' },
-                { _id: '3', name: 'Sports Excellence Award', description: 'For outstanding sports achievements', amount: 20000, eligibilityCriteria: 'State/National level participation', applicationDeadline: '2024-12-31', applicantCount: 8, status: 'Active' },
-            ]);
-            setApplications([
-                { _id: '1', student: { rollNumber: 'CE2024001', user: { firstName: 'Rahul', lastName: 'Kumar' } }, scholarship: { name: 'Merit Scholarship' }, status: 'Pending', appliedAt: new Date() },
-                { _id: '2', student: { rollNumber: 'CE2024002', user: { firstName: 'Priya', lastName: 'Singh' } }, scholarship: { name: 'Need-Based Scholarship' }, status: 'Approved', appliedAt: new Date() },
-            ]);
+            console.error('Error fetching scholarships/applications:', error);
+            setScholarships([]);
+            setApplications([]);
         }
         setLoading(false);
+    };
+
+    const defaultFormData = () => ({
+        name: '',
+        description: '',
+        type: 'Merit',
+        amount: '',
+        eligibilityCriteria: '',
+        applicationDeadline: '',
+        academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+        isActive: true,
+    });
+
+    const parseScholarshipDescription = (description = '') => {
+        const lines = String(description).split('\n');
+        const eligibilityLine = lines.find((line) => /^\s*Eligibility\s*:/i.test(line));
+        const cleanDescription = lines
+            .filter((line) => !/^\s*Eligibility\s*:/i.test(line))
+            .join('\n')
+            .trim();
+
+        return {
+            description: cleanDescription,
+            eligibilityCriteria: eligibilityLine
+                ? eligibilityLine.replace(/^\s*Eligibility\s*:/i, '').trim()
+                : '',
+        };
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setEditingScholarship(null);
+        setFormData(defaultFormData());
+    };
+
+    const openCreateModal = () => {
+        setEditingScholarship(null);
+        setFormData(defaultFormData());
+        setShowModal(true);
+    };
+
+    const openEditModal = (scholarship) => {
+        const parsed = parseScholarshipDescription(scholarship.description || '');
+        setEditingScholarship(scholarship);
+        setFormData({
+            name: scholarship.name || '',
+            description: parsed.description,
+            type: scholarship.type || 'Merit',
+            amount: scholarship.amount || '',
+            eligibilityCriteria: scholarship.eligibilityCriteria || parsed.eligibilityCriteria || '',
+            applicationDeadline: scholarship.deadline ? new Date(scholarship.deadline).toISOString().slice(0, 10) : '',
+            academicYear: scholarship.academicYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+            isActive: scholarship.isActive !== false,
+        });
+        setShowModal(true);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const scholarshipData = {
-                ...formData,
-                amount: parseInt(formData.amount)
+                name: formData.name,
+                description: formData.eligibilityCriteria
+                    ? `${formData.description}\nEligibility: ${formData.eligibilityCriteria}`.trim()
+                    : formData.description,
+                type: formData.type,
+                amount: parseInt(formData.amount, 10),
+                deadline: formData.applicationDeadline,
+                academicYear: formData.academicYear,
+                isActive: formData.isActive,
             };
-            const res = await api.post('/scholarships', scholarshipData);
+            const res = editingScholarship
+                ? await api.put(`/scholarships/${editingScholarship._id}`, scholarshipData)
+                : await api.post('/scholarships', scholarshipData);
             if (res.data.success) {
-                toast.success('Scholarship created successfully!');
+                toast.success(editingScholarship ? 'Scholarship updated successfully!' : 'Scholarship created successfully!');
                 fetchData();
-                setShowModal(false);
-                setFormData({ name: '', description: '', amount: '', eligibilityCriteria: '', applicationDeadline: '' });
+                closeModal();
             }
         } catch (error) {
-            console.error('Scholarship creation failed:', error);
-            toast.error(error.response?.data?.message || 'Failed to create scholarship');
+            console.error('Scholarship save failed:', error);
+            toast.error(error.response?.data?.message || (editingScholarship ? 'Failed to update scholarship' : 'Failed to create scholarship'));
         }
     };
 
@@ -78,7 +142,7 @@ const AdminScholarships = () => {
 
     const handleApplicationStatus = async (appId, status) => {
         try {
-            const res = await api.put(`/scholarships/applications/${appId}/status`, { status });
+            const res = await api.put(`/scholarships/applications/${appId}/review`, { status });
             if (res.data.success) {
                 toast.success(`Application ${status.toLowerCase()}`);
                 fetchData();
@@ -114,7 +178,7 @@ const AdminScholarships = () => {
                     <h1>Scholarship Management</h1>
                     <p>Create and manage scholarship programs</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                <button className="btn btn-primary" onClick={openCreateModal}>
                     <FiPlus /> Add Scholarship
                 </button>
             </div>
@@ -186,26 +250,33 @@ const AdminScholarships = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {scholarships.map((scholarship) => (
+                                {scholarships.map((scholarship) => {
+                                    const parsed = parseScholarshipDescription(scholarship.description || '');
+                                    const applicantCount = applications.filter((app) => app.scholarship?._id === scholarship._id).length;
+                                    return (
                                     <tr key={scholarship._id}>
                                         <td>
                                             <strong>{scholarship.name}</strong>
                                             <br />
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{scholarship.description}</span>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{parsed.description || scholarship.description}</span>
                                         </td>
                                         <td style={{ color: 'var(--success-color)', fontWeight: 600 }}>₹{scholarship.amount?.toLocaleString()}</td>
-                                        <td>{scholarship.eligibilityCriteria}</td>
-                                        <td>{new Date(scholarship.applicationDeadline).toLocaleDateString()}</td>
-                                        <td>{scholarship.applicantCount}</td>
-                                        <td><span className="badge badge-success">{scholarship.status}</span></td>
+                                        <td>{parsed.eligibilityCriteria || scholarship.eligibilityCriteria || 'Refer description'}</td>
+                                        <td>{scholarship.deadline ? new Date(scholarship.deadline).toLocaleDateString() : '-'}</td>
+                                        <td>{applicantCount}</td>
+                                        <td>
+                                            <span className={`badge ${scholarship.isActive ? 'badge-success' : 'badge-warning'}`}>
+                                                {scholarship.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                                                <button className="btn btn-secondary btn-sm"><FiEdit2 /></button>
+                                                <button className="btn btn-secondary btn-sm" onClick={() => openEditModal(scholarship)} title="Edit Scholarship"><FiEdit2 /></button>
                                                 <button className="btn btn-secondary btn-sm" onClick={() => handleDelete(scholarship._id)} style={{ color: 'var(--error-color)' }}><FiTrash2 /></button>
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
+                                )})}
                             </tbody>
                         </table>
                     </div>
@@ -235,7 +306,7 @@ const AdminScholarships = () => {
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{app.student?.rollNumber}</span>
                                         </td>
                                         <td>{app.scholarship?.name}</td>
-                                        <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
+                                        <td>{new Date(app.applicationDate || app.appliedAt || app.createdAt).toLocaleDateString()}</td>
                                         <td><span className={`badge ${getStatusClass(app.status)}`}>{app.status}</span></td>
                                         <td>
                                             {app.status === 'Pending' && (
@@ -255,11 +326,11 @@ const AdminScholarships = () => {
 
             {/* Add Scholarship Modal */}
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2><FiAward /> Add New Scholarship</h2>
-                            <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+                            <h2><FiAward /> {editingScholarship ? 'Edit Scholarship' : 'Add New Scholarship'}</h2>
+                            <button className="modal-close" onClick={closeModal}>×</button>
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
@@ -272,6 +343,17 @@ const AdminScholarships = () => {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
                                 <div className="form-group">
+                                    <label className="form-label">Type *</label>
+                                    <select className="form-input" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} required>
+                                        <option value="Merit">Merit</option>
+                                        <option value="Need-Based">Need-Based</option>
+                                        <option value="Sports">Sports</option>
+                                        <option value="Government">Government</option>
+                                        <option value="Private">Private</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
                                     <label className="form-label">Amount (₹) *</label>
                                     <input type="number" className="form-input" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
                                 </div>
@@ -279,14 +361,25 @@ const AdminScholarships = () => {
                                     <label className="form-label">Application Deadline *</label>
                                     <input type="date" className="form-input" value={formData.applicationDeadline} onChange={(e) => setFormData({ ...formData, applicationDeadline: e.target.value })} required />
                                 </div>
+                                <div className="form-group">
+                                    <label className="form-label">Academic Year *</label>
+                                    <input type="text" className="form-input" value={formData.academicYear} onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })} required />
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Eligibility Criteria</label>
                                 <textarea className="form-input" rows={2} value={formData.eligibilityCriteria} onChange={(e) => setFormData({ ...formData, eligibilityCriteria: e.target.value })} placeholder="e.g., CGPA > 8.0, Income < 5 LPA" />
                             </div>
+                            <div className="form-group">
+                                <label className="form-label">Status</label>
+                                <select className="form-input" value={formData.isActive ? 'active' : 'inactive'} onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'active' })}>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
                             <div className="form-actions">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Create Scholarship</button>
+                                <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">{editingScholarship ? 'Update Scholarship' : 'Create Scholarship'}</button>
                             </div>
                         </form>
                     </div>

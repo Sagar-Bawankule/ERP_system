@@ -9,6 +9,7 @@ const {
     toggleUserStatus,
     deleteUser,
     getRolesConfig,
+    resetUserPassword,
 } = require('../controllers/superAdminController');
 
 // All routes require authentication + super_admin role
@@ -23,6 +24,7 @@ router.get('/users', getAllUsers);
 router.post('/users', createUser);
 router.put('/users/:id/role', updateUserRole);
 router.put('/users/:id/status', toggleUserStatus);
+router.put('/users/:id/reset-password', resetUserPassword);
 router.delete('/users/:id', deleteUser);
 
 // Roles config

@@ -816,3 +816,89 @@
     font-size: var(--text-base);
     color: var(--text-secondary);
 }
+
+/* Face Attendance Modal */
+.face-attendance-modal {
+    max-width: 430px;
+    text-align: center;
+}
+
+.face-attendance-note {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-4);
+}
+
+.face-camera-frame {
+    width: 280px;
+    height: 200px;
+    margin: 0 auto;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    position: relative;
+    background: #0f172a;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.face-camera-frame.starting,
+.face-camera-frame.scanning,
+.face-camera-frame.processing {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.face-camera-frame.success {
+    border-color: var(--success);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.14);
+}
+
+.face-camera-frame.error {
+    border-color: var(--error);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.14);
+}
+
+.face-camera-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.face-scan-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.08), transparent 55%);
+}
+
+.face-scan-line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(16, 185, 129, 0.95);
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.85);
+    animation: face-scan-animation 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes face-scan-animation {
+    0% { transform: translateY(8px); }
+    100% { transform: translateY(188px); }
+}
+
+.face-status-text {
+    text-align: center;
+    font-weight: 600;
+    margin-top: 1rem;
+    min-height: 24px;
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .face-camera-frame {
+        width: 100%;
+        max-width: 280px;
+        height: 190px;
+    }
+}

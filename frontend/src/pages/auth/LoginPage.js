@@ -10,18 +10,80 @@ const LoginPage = () => {
         email: '',
         password: '',
     });
+    const [activeDemo, setActiveDemo] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [selectedRole, setSelectedRole] = useState(null);
     const { login, getDashboardRoute } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+
+    const demoAccounts = [
+        {
+            key: 'super_admin',
+            label: 'Super Admin',
+            email: 'superadmin@samarthcollege.edu.in',
+            password: 'superadmin123',
+        },
+        {
+            key: 'admin',
+            label: 'Admin',
+            email: 'admin@samarthcollege.edu.in',
+            password: 'admin123',
+        },
+        {
+            key: 'teacher',
+            label: 'Teacher',
+            email: 'teacher1@samarthcollege.edu.in',
+            password: 'teacher123',
+        },
+        {
+            key: 'student',
+            label: 'Student',
+            email: 'student1@samarthcollege.edu.in',
+            password: 'student123',
+        },
+        {
+            key: 'parent',
+            label: 'Parent',
+            email: 'parent1@gmail.com',
+            password: 'parent123',
+        },
+        {
+            key: 'accountant',
+            label: 'Accountant',
+            email: 'accountant@samarthcollege.edu.in',
+            password: 'accountant123',
+        },
+        {
+            key: 'librarian',
+            label: 'Librarian',
+            email: 'librarian@samarthcollege.edu.in',
+            password: 'librarian123',
+        },
+        {
+            key: 'receptionist',
+            label: 'Receptionist',
+            email: 'receptionist@samarthcollege.edu.in',
+            password: 'receptionist123',
+        },
+    ];
 
     const handleChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
         });
+        if (activeDemo) {
+            setActiveDemo('');
+        }
+    };
+
+    const handleDemoSelect = (account) => {
+        setFormData({
+            email: account.email,
+            password: account.password,
+        });
+        setActiveDemo(account.key);
     };
 
     const handleSubmit = async (e) => {
@@ -32,8 +94,10 @@ const LoginPage = () => {
 
         if (result.success) {
             toast.success('Login successful!');
-            const from = location.state?.from?.pathname || getDashboardRoute();
-            navigate(from, { replace: true });
+            const from = location.state?.from?.pathname;
+            const dashboardRoute = getDashboardRoute(result.user?.role);
+            const targetRoute = from && from !== '/login' ? from : dashboardRoute;
+            navigate(targetRoute, { replace: true });
         } else {
             toast.error(result.message);
         }
@@ -41,73 +105,9 @@ const LoginPage = () => {
         setLoading(false);
     };
 
-    const demoCredentials = [
-        { role: 'Super Admin', email: 'superadmin@samarthcollege.edu.in', password: 'superadmin123' },
-        { role: 'Admin', email: 'admin@samarthcollege.edu.in', password: 'admin123' },
-        { role: 'Teacher', email: 'teacher1@samarthcollege.edu.in', password: 'teacher123' },
-        { role: 'Student', email: 'student1@samarthcollege.edu.in', password: 'student123' },
-        { role: 'Parent', email: 'parent1@gmail.com', password: 'parent123' },
-        { role: 'Accountant', email: 'accountant@samarthcollege.edu.in', password: 'accountant123' },
-        { role: 'Librarian', email: 'librarian@samarthcollege.edu.in', password: 'librarian123' },
-        { role: 'Receptionist', email: 'receptionist@samarthcollege.edu.in', password: 'receptionist123' },
-    ];
+    const getWelcomeMessage = () => 'Welcome Back';
 
-    const fillDemo = (role, email, password) => {
-        setFormData({ email, password });
-        setSelectedRole(role);
-    };
-
-    const getWelcomeMessage = () => {
-        if (selectedRole) {
-            switch (selectedRole) {
-                case 'Super Admin':
-                    return 'Welcome, Super Admin';
-                case 'Admin':
-                    return 'Welcome Back, Administrator';
-                case 'Teacher':
-                    return 'Welcome Back, Teacher';
-                case 'Student':
-                    return 'Welcome Back, Student';
-                case 'Parent':
-                    return 'Welcome Back, Parent';
-                case 'Accountant':
-                    return 'Welcome, Accountant';
-                case 'Librarian':
-                    return 'Welcome, Librarian';
-                case 'Receptionist':
-                    return 'Welcome, Receptionist';
-                default:
-                    return 'Welcome Back';
-            }
-        }
-        return 'Welcome Back';
-    };
-
-    const getSubtitle = () => {
-        if (selectedRole) {
-            switch (selectedRole) {
-                case 'Super Admin':
-                    return 'Sign in to control the entire system';
-                case 'Admin':
-                    return 'Sign in to manage the college system';
-                case 'Teacher':
-                    return 'Sign in to access your teaching dashboard';
-                case 'Student':
-                    return 'Sign in to access your student portal';
-                case 'Parent':
-                    return 'Sign in to monitor your ward\'s progress';
-                case 'Accountant':
-                    return 'Sign in to manage college finances';
-                case 'Librarian':
-                    return 'Sign in to manage the library';
-                case 'Receptionist':
-                    return 'Sign in to manage front office';
-                default:
-                    return 'Sign in to access your dashboard';
-            }
-        }
-        return 'Sign in to access your dashboard';
-    };
+    const getSubtitle = () => 'Sign in to access your dashboard';
 
     return (
         <div className="auth-page">
@@ -135,9 +135,26 @@ const LoginPage = () => {
                 <div className="auth-form-container">
                     <div className="auth-form-wrapper">
                         <div className="auth-header">
-                            <h2 className={selectedRole ? 'animate-text' : ''}>{getWelcomeMessage()}</h2>
+                            <h2>{getWelcomeMessage()}</h2>
                             <p>{getSubtitle()}</p>
                         </div>
+
+                        <div className="demo-credentials">
+                            {demoAccounts.map((account) => (
+                                <button
+                                    key={account.key}
+                                    type="button"
+                                    className={`demo-btn ${activeDemo === account.key ? 'active' : ''}`}
+                                    onClick={() => handleDemoSelect(account)}
+                                    disabled={loading}
+                                >
+                                    {account.label}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="form-hint" style={{ marginBottom: 'var(--spacing-4)' }}>
+                            Quick login credentials for testing 8 accounts
+                        </p>
 
                         <form onSubmit={handleSubmit} className="auth-form">
                             <div className="form-group">
@@ -199,22 +216,6 @@ const LoginPage = () => {
                                 )}
                             </button>
                         </form>
-
-                        <div className="auth-divider">
-                            <span>Demo Credentials</span>
-                        </div>
-
-                        <div className="demo-credentials">
-                            {demoCredentials.map((cred, index) => (
-                                <button
-                                    key={index}
-                                    className={`demo-btn ${selectedRole === cred.role ? 'active' : ''}`}
-                                    onClick={() => fillDemo(cred.role, cred.email, cred.password)}
-                                >
-                                    {cred.role}
-                                </button>
-                            ))}
-                        </div>
                     </div>
                 </div>
             </div>

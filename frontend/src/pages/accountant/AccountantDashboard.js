@@ -32,7 +32,8 @@ const AccountantDashboard = () => {
             }
         } catch (error) {
             console.error('Error fetching dashboard:', error);
-            setStats({ monthlyIncome: 250000, monthlyExpense: 180000, monthlyFeeCollection: 350000, pendingFees: 15 });
+            setStats({ monthlyIncome: 0, monthlyExpense: 0, monthlyFeeCollection: 0, pendingFees: 0 });
+            setRecentPayments([]);
         }
         setLoading(false);
     };

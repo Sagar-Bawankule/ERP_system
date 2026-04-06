@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiUsers, FiSearch, FiPlus, FiTrash2, FiToggleLeft, FiToggleRight } from 'react-icons/fi';
+import { FiUsers, FiSearch, FiPlus, FiTrash2, FiToggleLeft, FiToggleRight, FiKey } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
@@ -10,6 +10,9 @@ const SuperAdminUsers = () => {
     const [search, setSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [newPassword, setNewPassword] = useState('');
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
     const [newUser, setNewUser] = useState({
         firstName: '', lastName: '', email: '', password: '', role: 'student', phone: '',
@@ -94,6 +97,31 @@ const SuperAdminUsers = () => {
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to update role');
         }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        if (!newPassword || newPassword.length < 6) {
+            toast.error('Password must be at least 6 characters long');
+            return;
+        }
+        try {
+            const res = await api.put(`/super-admin/users/${selectedUser._id}/reset-password`, { newPassword });
+            if (res.data.success) {
+                toast.success(res.data.message);
+                setShowResetPasswordModal(false);
+                setSelectedUser(null);
+                setNewPassword('');
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to reset password');
+        }
+    };
+
+    const openResetPasswordModal = (user) => {
+        setSelectedUser(user);
+        setNewPassword('');
+        setShowResetPasswordModal(true);
     };
 
     const getRoleBadgeColor = (role) => {
@@ -209,13 +237,23 @@ const SuperAdminUsers = () => {
                                             {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Never'}
                                         </td>
                                         <td>
-                                            <button
-                                                onClick={() => handleDeleteUser(u._id, `${u.firstName} ${u.lastName}`)}
-                                                className="btn btn-secondary"
-                                                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
-                                            >
-                                                <FiTrash2 />
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => openResetPasswordModal(u)}
+                                                    className="btn btn-primary"
+                                                    style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                                                    title="Reset Password"
+                                                >
+                                                    <FiKey />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(u._id, `${u.firstName} ${u.lastName}`)}
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                                                >
+                                                    <FiTrash2 />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -297,6 +335,65 @@ const SuperAdminUsers = () => {
                             <div style={{ display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end', marginTop: 'var(--spacing-4)' }}>
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">Create User</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Reset Password Modal */}
+            {showResetPasswordModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '450px' }}>
+                        <div className="modal-header">
+                            <h2>🔑 Reset Password</h2>
+                            <button className="modal-close" onClick={() => {
+                                setShowResetPasswordModal(false);
+                                setSelectedUser(null);
+                                setNewPassword('');
+                            }}>×</button>
+                        </div>
+                        <form onSubmit={handleResetPassword}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                                    Set new password for: <strong>{selectedUser?.firstName} {selectedUser?.lastName}</strong>
+                                </p>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                    📧 Email: {selectedUser?.email}
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <label className="form-label">New Password *</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Enter new password (min 6 characters)"
+                                    required
+                                    autoFocus
+                                />
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                    ⚠️ This password will be encrypted in database
+                                </p>
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: 'var(--spacing-3)', justifyContent: 'flex-end', marginTop: 'var(--spacing-4)' }}>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-secondary" 
+                                    onClick={() => {
+                                        setShowResetPasswordModal(false);
+                                        setSelectedUser(null);
+                                        setNewPassword('');
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn btn-primary">
+                                    Reset Password
+                                </button>
                             </div>
                         </form>
                     </div>

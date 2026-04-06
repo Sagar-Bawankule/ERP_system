@@ -15,24 +15,16 @@ const StudentLeave = () => {
         reason: '',
     });
 
-    const setDemoData = useCallback(() => {
-        setLeaves([
-            { _id: '1', leaveType: 'Sick Leave', fromDate: new Date('2024-12-10'), toDate: new Date('2024-12-11'), numberOfDays: 2, reason: 'Fever and cold', status: 'Approved', reviewRemarks: 'Get well soon', createdAt: new Date('2024-12-09') },
-            { _id: '2', leaveType: 'Personal', fromDate: new Date('2024-11-25'), toDate: new Date('2024-11-25'), numberOfDays: 1, reason: 'Family function', status: 'Approved', createdAt: new Date('2024-11-20') },
-            { _id: '3', leaveType: 'Medical', fromDate: new Date('2024-12-20'), toDate: new Date('2024-12-22'), numberOfDays: 3, reason: 'Medical checkup', status: 'Pending', createdAt: new Date('2024-12-15') },
-        ]);
-        setLoading(false);
-    }, []);
-
     const fetchLeaves = useCallback(async () => {
         try {
             const res = await leaveService.getMyLeaves();
             setLeaves(res.data.data || []);
         } catch (error) {
-            setDemoData();
+            console.error('Error fetching leaves:', error);
+            setLeaves([]);
         }
         setLoading(false);
-    }, [setDemoData]);
+    }, []);
 
     useEffect(() => {
         fetchLeaves();
@@ -233,6 +225,9 @@ const StudentLeave = () => {
                                             <span className={`badge ${getStatusClass(leave.status)}`}>
                                                 {getStatusIcon(leave.status)} {leave.status}
                                             </span>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                                                T: {leave.approvalFlow?.teacher?.status || 'Pending'} | A: {leave.approvalFlow?.admin?.status || 'Pending'} | SA: {leave.approvalFlow?.superAdmin?.status || 'Pending'}
+                                            </div>
                                         </td>
                                         <td>{new Date(leave.createdAt).toLocaleDateString()}</td>
                                     </tr>

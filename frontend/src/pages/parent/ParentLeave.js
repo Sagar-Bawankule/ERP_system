@@ -15,88 +15,6 @@ const ParentLeave = () => {
     const [filter, setFilter] = useState('all');
     const [selectedLeave, setSelectedLeave] = useState(null);
 
-    const setDemoData = useCallback(() => {
-        const demoWards = [{
-            student: {
-                id: 'demo-1',
-                name: 'John Smith',
-                rollNumber: 'CS2021001',
-                department: 'Computer Science',
-                semester: 5,
-            }
-        }];
-        setWardsData(demoWards);
-        setSelectedWard(demoWards[0]);
-    }, []);
-
-    const setDemoLeaves = useCallback(() => {
-        setLeaves([
-            {
-                _id: '1',
-                leaveType: 'Sick Leave',
-                fromDate: new Date('2024-12-10'),
-                toDate: new Date('2024-12-11'),
-                numberOfDays: 2,
-                reason: 'Fever and cold. Doctor advised rest for two days.',
-                status: 'Approved',
-                reviewRemarks: 'Get well soon. Please submit medical certificate on joining.',
-                reviewedBy: { firstName: 'Prof.', lastName: 'Sharma' },
-                reviewDate: new Date('2024-12-09'),
-                createdAt: new Date('2024-12-08'),
-            },
-            {
-                _id: '2',
-                leaveType: 'Personal',
-                fromDate: new Date('2024-11-25'),
-                toDate: new Date('2024-11-25'),
-                numberOfDays: 1,
-                reason: 'Family function - Sister\'s wedding',
-                status: 'Approved',
-                reviewRemarks: 'Approved',
-                reviewedBy: { firstName: 'Dr.', lastName: 'Patel' },
-                reviewDate: new Date('2024-11-23'),
-                createdAt: new Date('2024-11-20'),
-            },
-            {
-                _id: '3',
-                leaveType: 'Medical',
-                fromDate: new Date('2024-12-20'),
-                toDate: new Date('2024-12-22'),
-                numberOfDays: 3,
-                reason: 'Scheduled medical checkup and minor procedure at the hospital.',
-                status: 'Pending',
-                createdAt: new Date('2024-12-15'),
-            },
-            {
-                _id: '4',
-                leaveType: 'Emergency Leave',
-                fromDate: new Date('2024-10-15'),
-                toDate: new Date('2024-10-15'),
-                numberOfDays: 1,
-                reason: 'Family emergency - grandparent hospitalized',
-                status: 'Approved',
-                reviewRemarks: 'Hope everything is alright. Take care.',
-                reviewedBy: { firstName: 'Prof.', lastName: 'Kumar' },
-                reviewDate: new Date('2024-10-15'),
-                createdAt: new Date('2024-10-15'),
-            },
-            {
-                _id: '5',
-                leaveType: 'Casual Leave',
-                fromDate: new Date('2024-09-28'),
-                toDate: new Date('2024-09-30'),
-                numberOfDays: 3,
-                reason: 'Personal work at hometown',
-                status: 'Rejected',
-                reviewRemarks: 'Leave dates overlap with mid-term exams. Cannot be approved.',
-                reviewedBy: { firstName: 'Dr.', lastName: 'Singh' },
-                reviewDate: new Date('2024-09-26'),
-                createdAt: new Date('2024-09-25'),
-            },
-        ]);
-        setLoading(false);
-    }, []);
-
     const fetchWardsData = useCallback(async () => {
         try {
             const res = await parentService.getWardDashboard();
@@ -107,9 +25,10 @@ const ParentLeave = () => {
             }
         } catch (error) {
             console.error('Error fetching wards:', error);
-            setDemoData();
+            setWardsData([]);
+            setSelectedWard(null);
         }
-    }, [setDemoData]);
+    }, []);
 
     const fetchLeaves = useCallback(async () => {
         setLoading(true);
@@ -118,10 +37,10 @@ const ParentLeave = () => {
             setLeaves(res.data.data || []);
         } catch (error) {
             console.error('Error fetching leaves:', error);
-            setDemoLeaves();
+            setLeaves([]);
         }
         setLoading(false);
-    }, [selectedWard, setDemoLeaves]);
+    }, [selectedWard]);
 
     useEffect(() => {
         fetchWardsData();

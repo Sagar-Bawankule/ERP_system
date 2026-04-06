@@ -22,7 +22,8 @@ const LibrarianDashboard = () => {
             }
         } catch (error) {
             console.error('Error:', error);
-            setStats({ totalBooks: 500, totalIssued: 45, overdueBooks: 8, totalFineCollected: 1200 });
+            setStats({ totalBooks: 0, totalIssued: 0, overdueBooks: 0, totalFineCollected: 0 });
+            setRecentIssues([]);
         }
         setLoading(false);
     };

@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FiCalendar, FiCheck, FiX, FiClock, FiPieChart } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { FiCalendar, FiCheck, FiX, FiClock, FiPieChart, FiCamera } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { attendanceService } from '../../services/api';
 import './StudentPages.css';
 
 const StudentAttendance = () => {
     const { profile } = useAuth();
+    const getCurrentMonthValue = () => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    };
+
     const [loading, setLoading] = useState(true);
     const [attendance, setAttendance] = useState([]);
     const [summary, setSummary] = useState({
@@ -15,11 +20,24 @@ const StudentAttendance = () => {
         late: 0,
         percentage: 0,
     });
-    const [selectedMonth, setSelectedMonth] = useState(
-        new Date().toISOString().slice(0, 7) // YYYY-MM format
-    );
+    const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthValue());
     const [sensorCheckModal, setSensorCheckModal] = useState(false);
+    const [sensorStatus, setSensorStatus] = useState('idle'); // idle | searching | connected | not_found
     const [fingerprintModal, setFingerprintModal] = useState({ show: false, status: 'idle' });
+    const [faceModal, setFaceModal] = useState({ show: false, status: 'idle', message: '' });
+    const faceVideoRef = useRef(null);
+    const faceStreamRef = useRef(null);
+    const faceDetectIntervalRef = useRef(null);
+    const faceDetectTimeoutRef = useRef(null);
+    const faceStableCountRef = useRef(0);
+    const faceBoundingBoxRef = useRef(null);
+    const faceDetectorEngineRef = useRef(null);
+    const faceModalOpenRef = useRef(false);
+    const faceAttendanceTriggeredRef = useRef(false);
+    const studentDisplayName = profile?.name
+        || profile?.fullName
+        || [profile?.firstName, profile?.lastName].filter(Boolean).join(' ')
+        || 'Deshmukh Sangram';
 
     const getRecentMonths = () => {
         const result = [];
@@ -35,15 +53,24 @@ const StudentAttendance = () => {
 
     const months = getRecentMonths();
 
-    const fetchAttendance = useCallback(async () => {
-        setLoading(true);
-        try {
-            // Fetch attendance records
-            const res = await attendanceService.getStudent(profile._id, { month: selectedMonth });
-            setAttendance(res.data.data || []);
+    const fetchAttendance = useCallback(async ({ silent = false, monthOverride } = {}) => {
+        if (!profile?._id) {
+            return;
+        }
 
-            // Fetch summary
-            const summaryRes = await attendanceService.getSummary(profile._id);
+        if (!silent) {
+            setLoading(true);
+        }
+
+        const targetMonth = monthOverride || selectedMonth;
+
+        try {
+            const cacheBuster = Date.now();
+            const [res, summaryRes] = await Promise.all([
+                attendanceService.getStudent(profile._id, { month: targetMonth, t: cacheBuster }),
+                attendanceService.getSummary(profile._id, { month: targetMonth, t: cacheBuster }),
+            ]);
+            setAttendance(res.data.data || []);
             setSummary(summaryRes.data.data?.overall || {
                 total: 0,
                 present: 0,
@@ -53,17 +80,30 @@ const StudentAttendance = () => {
             });
         } catch (error) {
             console.error('Error fetching attendance:', error);
-            setAttendance([]);
-            setSummary({
-                total: 0,
-                present: 0,
-                absent: 0,
-                late: 0,
-                percentage: 0,
-            });
+            if (!silent) {
+                setAttendance([]);
+                setSummary({
+                    total: 0,
+                    present: 0,
+                    absent: 0,
+                    late: 0,
+                    percentage: 0,
+                });
+            }
         }
-        setLoading(false);
+
+        if (!silent) {
+            setLoading(false);
+        }
     }, [profile, selectedMonth]);
+
+    const refreshAttendanceAfterMark = useCallback(async () => {
+        const currentMonth = getCurrentMonthValue();
+        if (selectedMonth !== currentMonth) {
+            setSelectedMonth(currentMonth);
+        }
+        await fetchAttendance({ silent: true, monthOverride: currentMonth });
+    }, [fetchAttendance, selectedMonth]);
 
     useEffect(() => {
         if (profile?._id) {
@@ -71,37 +111,397 @@ const StudentAttendance = () => {
         }
     }, [profile, selectedMonth, fetchAttendance]);
 
+    const stopFaceDetection = useCallback(() => {
+        if (faceDetectIntervalRef.current) {
+            clearInterval(faceDetectIntervalRef.current);
+            faceDetectIntervalRef.current = null;
+        }
+        if (faceDetectTimeoutRef.current) {
+            clearTimeout(faceDetectTimeoutRef.current);
+            faceDetectTimeoutRef.current = null;
+        }
+        faceStableCountRef.current = 0;
+        faceBoundingBoxRef.current = null;
+    }, []);
+
+    const toPoint = (point) => {
+        if (Array.isArray(point)) {
+            return point;
+        }
+        if (point && typeof point.dataSync === 'function') {
+            return Array.from(point.dataSync());
+        }
+        return [0, 0];
+    };
+
+    const getFaceDetectorEngine = useCallback(async () => {
+        if (faceDetectorEngineRef.current) {
+            return faceDetectorEngineRef.current;
+        }
+
+        if ('FaceDetector' in window && typeof window.FaceDetector === 'function') {
+            const nativeDetector = new window.FaceDetector({ fastMode: false, maxDetectedFaces: 1 });
+            const nativeEngine = {
+                source: 'native-face-detector',
+                detect: async (video) => nativeDetector.detect(video),
+            };
+            faceDetectorEngineRef.current = nativeEngine;
+            return nativeEngine;
+        }
+
+        setFaceModal((prev) => {
+            if (!prev.show) return prev;
+            return {
+                ...prev,
+                status: 'starting',
+                message: 'Loading AI face model...',
+            };
+        });
+
+        const tfModule = await import('@tensorflow/tfjs');
+        const blazeModule = await import('@tensorflow-models/blazeface');
+
+        await tfModule.ready();
+        try {
+            await tfModule.setBackend('webgl');
+        } catch (backendError) {
+            await tfModule.setBackend('cpu');
+        }
+
+        const model = await blazeModule.load();
+        const blazeEngine = {
+            source: 'tfjs-blazeface',
+            detect: async (video) => {
+                const predictions = await model.estimateFaces(video, false);
+
+                return (predictions || []).map((prediction) => {
+                    const topLeft = toPoint(prediction.topLeft);
+                    const bottomRight = toPoint(prediction.bottomRight);
+
+                    return {
+                        boundingBox: {
+                            x: Math.max(0, topLeft[0] || 0),
+                            y: Math.max(0, topLeft[1] || 0),
+                            width: Math.max(0, (bottomRight[0] || 0) - (topLeft[0] || 0)),
+                            height: Math.max(0, (bottomRight[1] || 0) - (topLeft[1] || 0)),
+                        },
+                    };
+                });
+            },
+        };
+
+        faceDetectorEngineRef.current = blazeEngine;
+        return blazeEngine;
+    }, []);
+
+    const stopFaceStream = useCallback(() => {
+        if (faceStreamRef.current) {
+            faceStreamRef.current.getTracks().forEach((track) => track.stop());
+            faceStreamRef.current = null;
+        }
+        if (faceVideoRef.current) {
+            faceVideoRef.current.srcObject = null;
+        }
+    }, []);
+
+    const closeFaceModal = useCallback(() => {
+        stopFaceDetection();
+        stopFaceStream();
+        faceModalOpenRef.current = false;
+        faceAttendanceTriggeredRef.current = false;
+        setFaceModal({ show: false, status: 'idle', message: '' });
+    }, [stopFaceDetection, stopFaceStream]);
+
+    const captureFaceFrameBlob = useCallback(async () => {
+        const video = faceVideoRef.current;
+        if (!video) {
+            throw new Error('Camera stream is not available');
+        }
+
+        const width = video.videoWidth || 320;
+        const height = video.videoHeight || 240;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            throw new Error('Unable to capture face image');
+        }
+
+        ctx.drawImage(video, 0, 0, width, height);
+
+        return new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Face image capture failed'));
+                }
+            }, 'image/jpeg', 0.92);
+        });
+    }, []);
+
+    const verifyFaceStillPresent = useCallback(async () => {
+        const video = faceVideoRef.current;
+        if (!video || video.readyState < 2) {
+            throw new Error('Face is not visible in camera. Keep your face in frame.');
+        }
+
+        const detectorEngine = faceDetectorEngineRef.current;
+        if (!detectorEngine) {
+            throw new Error('Face detector is not ready. Please try again.');
+        }
+
+        const faces = await detectorEngine.detect(video);
+
+        if (!faces.length) {
+            throw new Error('Face left the frame. Keep your face in camera and try again.');
+        }
+
+        const box = faces[0]?.boundingBox;
+        faceBoundingBoxRef.current = box
+            ? {
+                x: Math.round(box.x),
+                y: Math.round(box.y),
+                width: Math.round(box.width),
+                height: Math.round(box.height),
+            }
+            : null;
+    }, []);
+
+    const handleFaceDetected = useCallback(async () => {
+        if (!faceModalOpenRef.current || faceAttendanceTriggeredRef.current) {
+            return;
+        }
+
+        faceAttendanceTriggeredRef.current = true;
+        stopFaceDetection();
+        setFaceModal((prev) => ({
+            ...prev,
+            status: 'processing',
+            message: 'Face detected. Keep still while verifying identity...',
+        }));
+
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 1200));
+            await verifyFaceStillPresent();
+
+            const faceBlob = await captureFaceFrameBlob();
+            const form = new FormData();
+            form.append('faceCapture', faceBlob, `face-${Date.now()}.jpg`);
+            form.append('detector', 'browser-face-detector');
+            if (faceBoundingBoxRef.current) {
+                form.append('faceBox', JSON.stringify(faceBoundingBoxRef.current));
+            }
+
+            await attendanceService.markSelfFace(form);
+            stopFaceStream();
+
+            setFaceModal((prev) => ({
+                ...prev,
+                status: 'success',
+                message: `✅ ${studentDisplayName} - Face Attendance Marked Successfully!`,
+            }));
+
+            await refreshAttendanceAfterMark();
+
+            setTimeout(() => {
+                closeFaceModal();
+            }, 2600);
+        } catch (error) {
+            console.error('Error marking face attendance:', error);
+            stopFaceStream();
+            setFaceModal((prev) => ({
+                ...prev,
+                status: 'error',
+                message: error.response?.data?.message || error.message || 'Face detected, but attendance marking failed. Try again.',
+            }));
+            faceAttendanceTriggeredRef.current = false;
+        }
+    }, [captureFaceFrameBlob, closeFaceModal, refreshAttendanceAfterMark, stopFaceDetection, stopFaceStream, studentDisplayName, verifyFaceStillPresent]);
+
+    const initializeFaceAttendance = useCallback(async () => {
+        try {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                throw new Error('Camera is not supported in this browser.');
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 320 },
+                    height: { ideal: 240 },
+                    facingMode: 'user',
+                },
+                audio: false,
+            });
+
+            faceStreamRef.current = stream;
+
+            if (faceVideoRef.current) {
+                faceVideoRef.current.srcObject = stream;
+                await faceVideoRef.current.play();
+            }
+
+            setFaceModal((prev) => ({
+                ...prev,
+                status: 'scanning',
+                message: 'Camera active. Keep your face clearly inside the frame.',
+            }));
+
+            const detectorEngine = await getFaceDetectorEngine();
+            setFaceModal((prev) => ({
+                ...prev,
+                status: 'scanning',
+                message: detectorEngine.source === 'native-face-detector'
+                    ? 'Face detector ready. Keep your face steady.'
+                    : 'AI face detector ready. Keep your face steady.',
+            }));
+
+            faceDetectIntervalRef.current = setInterval(async () => {
+                if (faceAttendanceTriggeredRef.current || !faceVideoRef.current || faceVideoRef.current.readyState < 2) {
+                    return;
+                }
+
+                try {
+                    const faces = await detectorEngine.detect(faceVideoRef.current);
+                    if (faces.length === 0) {
+                        faceStableCountRef.current = 0;
+                        faceBoundingBoxRef.current = null;
+                        setFaceModal((prev) => {
+                            if (prev.status !== 'scanning' || prev.message === 'No face detected. Keep your face in the frame.') {
+                                return prev;
+                            }
+                            return { ...prev, message: 'No face detected. Keep your face in the frame.' };
+                        });
+                        return;
+                    }
+
+                    faceStableCountRef.current += 1;
+                    const box = faces[0]?.boundingBox;
+                    faceBoundingBoxRef.current = box
+                        ? {
+                            x: Math.round(box.x),
+                            y: Math.round(box.y),
+                            width: Math.round(box.width),
+                            height: Math.round(box.height),
+                        }
+                        : null;
+
+                    if (faceStableCountRef.current < 3) {
+                        const holdMessage = `Face detected. Hold still (${faceStableCountRef.current}/3)...`;
+                        setFaceModal((prev) => {
+                            if (prev.status !== 'scanning' || prev.message === holdMessage) {
+                                return prev;
+                            }
+                            return { ...prev, message: holdMessage };
+                        });
+                        return;
+                    }
+
+                    void handleFaceDetected();
+                } catch (detectError) {
+                    faceStableCountRef.current = 0;
+                    setFaceModal((prev) => {
+                        if (prev.status !== 'scanning' || prev.message === 'Face detection error. Adjust lighting and keep face steady.') {
+                            return prev;
+                        }
+                        return {
+                            ...prev,
+                            message: 'Face detection error. Adjust lighting and keep face steady.',
+                        };
+                    });
+                }
+            }, 500);
+        } catch (error) {
+            console.error('Error opening face attendance camera:', error);
+            stopFaceStream();
+            setFaceModal((prev) => ({
+                ...prev,
+                status: 'error',
+                message: error.message || 'Unable to start face detection. Please allow camera and reload.',
+            }));
+        }
+    }, [getFaceDetectorEngine, handleFaceDetected, stopFaceStream]);
+
+    const handleFaceAttendanceClick = () => {
+        faceModalOpenRef.current = true;
+        faceAttendanceTriggeredRef.current = false;
+        faceStableCountRef.current = 0;
+        faceBoundingBoxRef.current = null;
+        setFaceModal({ show: true, status: 'starting', message: 'Opening camera...' });
+    };
+
+    useEffect(() => {
+        if (!faceModal.show) {
+            return undefined;
+        }
+
+        initializeFaceAttendance();
+
+        return () => {
+            faceModalOpenRef.current = false;
+            stopFaceDetection();
+            stopFaceStream();
+        };
+    }, [faceModal.show, initializeFaceAttendance, stopFaceDetection, stopFaceStream]);
+
+    useEffect(() => {
+        return () => {
+            faceModalOpenRef.current = false;
+            stopFaceDetection();
+            stopFaceStream();
+        };
+    }, [stopFaceDetection, stopFaceStream]);
+
     const handleFingerprintClick = () => {
         // Step 1: Show sensor connection check popup
         setSensorCheckModal(true);
+        setSensorStatus('idle');
     };
 
-    const handleSensorConnected = () => {
-        // User confirmed sensor is connected
+    const startFingerprintScanFlow = () => {
         setSensorCheckModal(false);
         setFingerprintModal({ show: true, status: 'scanning' });
-        
-        // Simulate scan duration (45 seconds as per requirement)
+
+        // Simulate scan duration (45 seconds as requested)
         setTimeout(async () => {
             try {
                 await attendanceService.markSelf();
                 setFingerprintModal(prev => ({ ...prev, status: 'success' }));
-                fetchAttendance(); // Refresh the list
-                
-                // Close modal after success
+                await new Promise(resolve => setTimeout(resolve, 300));
+                await refreshAttendanceAfterMark(); // Real-time refresh for overall attendance and list
+
                 setTimeout(() => {
                     setFingerprintModal({ show: false, status: 'idle' });
                 }, 2000);
             } catch (error) {
                 console.error('Error marking self attendance:', error);
                 setFingerprintModal(prev => ({ ...prev, status: 'error' }));
-                
-                // Allow retry
                 setTimeout(() => {
                     setFingerprintModal(prev => ({ ...prev, status: 'idle' }));
                 }, 2500);
             }
-        }, 45000); // 45 seconds as requested
+        }, 45000);
+    };
+
+    const handleSensorConnected = async () => {
+        setSensorStatus('searching');
+        try {
+            const res = await attendanceService.getSensorStatus();
+            const connected = !!res.data?.data?.connected;
+            if (connected) {
+                setSensorStatus('connected');
+                setTimeout(() => {
+                    startFingerprintScanFlow();
+                }, 1000);
+            } else {
+                setSensorStatus('not_found');
+            }
+        } catch (error) {
+            console.error('Sensor detection error:', error);
+            setSensorStatus('not_found');
+        }
     };
 
     const handleSensorNotConnected = () => {
@@ -109,32 +509,6 @@ const StudentAttendance = () => {
         setSensorCheckModal(false);
         // Show alert to connect sensor
         alert('Please connect the fingerprint sensor and try again.');
-    };
-
-    const handleFingerprintScan = () => {
-        setFingerprintModal({ show: true, status: 'scanning' });
-        
-        // Simulate scan duration
-        setTimeout(async () => {
-            try {
-                await attendanceService.markSelf();
-                setFingerprintModal(prev => ({ ...prev, status: 'success' }));
-                fetchAttendance(); // Refresh the list
-                
-                // Close modal after success
-                setTimeout(() => {
-                    setFingerprintModal({ show: false, status: 'idle' });
-                }, 2000);
-            } catch (error) {
-                console.error('Error marking self attendance:', error);
-                setFingerprintModal(prev => ({ ...prev, status: 'error' }));
-                
-                // Allow retry
-                setTimeout(() => {
-                    setFingerprintModal(prev => ({ ...prev, status: 'idle' }));
-                }, 2500);
-            }
-        }, 2500); // 2.5 seconds scanning animation
     };
 
     const getStatusIcon = (status) => {
@@ -175,9 +549,16 @@ const StudentAttendance = () => {
                     <button 
                         className="btn btn-primary" 
                         onClick={handleFingerprintClick} 
-                        style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                     >
                         <FiCheck /> Fingerprint Attendance
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={handleFaceAttendanceClick}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <FiCamera /> Face Attendance
                     </button>
                     <select
                         className="form-select"
@@ -335,10 +716,13 @@ const StudentAttendance = () => {
                         <div style={{ padding: '1.5rem 0' }}>
                             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👆</div>
                             <p style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-                                Is the fingerprint sensor connected?
+                                Connect fingerprint sensor and search device
                             </p>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                                Sensor must be connected for biometric attendance
+                                {sensorStatus === 'idle' && 'Click Yes to start searching sensor'}
+                                {sensorStatus === 'searching' && 'Searching for fingerprint sensor...'}
+                                {sensorStatus === 'connected' && 'Fingerprint sensor connected successfully'}
+                                {sensorStatus === 'not_found' && 'Sensor not detected. Please connect device and try again'}
                             </p>
                         </div>
 
@@ -346,9 +730,10 @@ const StudentAttendance = () => {
                             <button 
                                 className="btn btn-success" 
                                 onClick={handleSensorConnected}
+                                disabled={sensorStatus === 'searching'}
                                 style={{ minWidth: '120px', fontSize: '1.05rem' }}
                             >
-                                ✅ Yes
+                                {sensorStatus === 'searching' ? 'Searching...' : '✅ Yes'}
                             </button>
                             <button 
                                 className="btn btn-error" 
@@ -383,7 +768,7 @@ const StudentAttendance = () => {
                         <div className="fingerprint-container">
                             <div 
                                 className={`fingerprint-sensor ${fingerprintModal.status}`} 
-                                onClick={fingerprintModal.status === 'idle' ? handleFingerprintScan : undefined}
+                                onClick={undefined}
                             >
                                 {fingerprintModal.status === 'success' ? (
                                     <FiCheck size={48} className="success-icon" />
@@ -409,6 +794,48 @@ const StudentAttendance = () => {
                                 {fingerprintModal.status === 'success' && <span style={{ color: 'var(--success)' }}>✅ Deshmukh Sangram - Attendance Marked!</span>}
                                 {fingerprintModal.status === 'error' && <span style={{ color: 'var(--error)' }}>Verification Failed. Try Again.</span>}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Face Attendance Modal */}
+            {faceModal.show && (
+                <div className="modal-overlay">
+                    <div className="modal-content face-attendance-modal">
+                        <div className="modal-header">
+                            <h2 style={{ width: '100%' }}>Face Attendance</h2>
+                            <button
+                                className="modal-close"
+                                onClick={closeFaceModal}
+                            >
+                                <FiX />
+                            </button>
+                        </div>
+
+                        <p className="face-attendance-note">
+                            Attendance is marked only after real face detection and live face capture.
+                        </p>
+
+                        <div className={`face-camera-frame ${faceModal.status}`}>
+                            <video
+                                ref={faceVideoRef}
+                                className="face-camera-preview"
+                                autoPlay
+                                playsInline
+                                muted
+                            />
+                            {(faceModal.status === 'starting' || faceModal.status === 'scanning') && (
+                                <div className="face-scan-overlay">
+                                    <span className="face-scan-line"></span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="face-status-text">
+                            {(faceModal.status === 'starting' || faceModal.status === 'scanning' || faceModal.status === 'processing') && (faceModal.message || 'Processing...')}
+                            {faceModal.status === 'success' && <span style={{ color: 'var(--success)' }}>{faceModal.message}</span>}
+                            {faceModal.status === 'error' && <span style={{ color: 'var(--error)' }}>{faceModal.message}</span>}
                         </div>
                     </div>
                 </div>

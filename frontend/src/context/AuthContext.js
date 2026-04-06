@@ -95,9 +95,9 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const getDashboardRoute = () => {
-        if (!user) return '/login';
-        switch (user.role) {
+    const getDashboardRoute = (role = user?.role) => {
+        if (!role) return '/login';
+        switch (role) {
             case 'super_admin': return '/super-admin/dashboard';
             case 'admin': return '/admin/dashboard';
             case 'teacher': return '/teacher/dashboard';

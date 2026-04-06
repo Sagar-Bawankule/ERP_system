@@ -24,13 +24,8 @@ const AdminSubjects = () => {
             const res = await api.get('/subjects');
             setSubjects(res.data.data || []);
         } catch (error) {
-            // Demo data
-            setSubjects([
-                { _id: '1', subjectCode: 'CS301', name: 'Database Management System', department: 'Computer Engineering', semester: 5, credits: 4, maxMarks: 100, teacher: { user: { firstName: 'Dr. Suresh', lastName: 'Patil' } } },
-                { _id: '2', subjectCode: 'CS302', name: 'Operating Systems', department: 'Computer Engineering', semester: 5, credits: 4, maxMarks: 100, teacher: { user: { firstName: 'Prof. Meena', lastName: 'Sharma' } } },
-                { _id: '3', subjectCode: 'CS303', name: 'Computer Networks', department: 'Computer Engineering', semester: 5, credits: 3, maxMarks: 100, teacher: null },
-                { _id: '4', subjectCode: 'ME201', name: 'Thermodynamics', department: 'Mechanical Engineering', semester: 3, credits: 4, maxMarks: 100, teacher: null },
-            ]);
+            console.error('Error fetching subjects:', error);
+            setSubjects([]);
         }
         setLoading(false);
     };

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
     FiUsers, FiCalendar, FiBookOpen, FiDollarSign,
-    FiBell, FiFileText,
+    FiFileText,
     FiTrendingUp, FiPieChart, FiChevronRight
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
@@ -15,38 +15,6 @@ const ParentDashboard = () => {
     const [wardsData, setWardsData] = useState([]);
     const [selectedWard, setSelectedWard] = useState(null);
 
-
-    const setDemoData = useCallback(() => {
-        const demoWards = [
-            {
-                student: {
-                    id: 'demo-1',
-                    name: 'John Smith',
-                    rollNumber: 'CS2021001',
-                    department: 'Computer Science',
-                    semester: 5,
-                },
-                attendance: {
-                    summary: { total: 45, present: 42, percentage: 93 },
-                    recent: [
-                        { _id: '1', date: new Date(), status: 'Present', subject: { name: 'Database Management' } },
-                        { _id: '2', date: new Date(Date.now() - 86400000), status: 'Present', subject: { name: 'Operating Systems' } },
-                    ]
-                },
-                fees: { total: 75000, paid: 55000, due: 20000 },
-                marks: [
-                    { _id: '1', subject: { name: 'DBMS', code: 'CS301' }, examType: 'Mid Semester', marksObtained: 42, maxMarks: 50 },
-                    { _id: '2', subject: { name: 'OS', code: 'CS302' }, examType: 'Mid Semester', marksObtained: 38, maxMarks: 50 },
-                ],
-                pendingLeaves: 1,
-            }
-        ];
-        setWardsData(demoWards);
-        setSelectedWard(demoWards[0]);
-
-
-    }, []);
-
     const fetchDashboardData = useCallback(async () => {
         try {
             const dashboardRes = await parentService.getWardDashboard();
@@ -58,10 +26,11 @@ const ParentDashboard = () => {
             }
         } catch (error) {
             console.error('Error fetching dashboard:', error);
-            setDemoData();
+            setWardsData([]);
+            setSelectedWard(null);
         }
         setLoading(false);
-    }, [setDemoData]);
+    }, []);
 
     useEffect(() => {
         fetchDashboardData();

@@ -25,7 +25,7 @@ const AdminGallery = () => {
             }
             return image.image.url;
         }
-        // Fallback for demo/placeholder data
+        // Keep a safe image fallback if a record has no valid image URL.
         return image.imageUrl || '/logo2.jpg';
     };
 
@@ -38,14 +38,8 @@ const AdminGallery = () => {
             const res = await api.get('/gallery');
             setImages(res.data.data || []);
         } catch (error) {
-            // Demo data
-            setImages([
-                { _id: '1', title: 'College Main Building', category: 'Campus', imageUrl: '/clg_maindoor.jpg', uploadedAt: new Date() },
-                { _id: '2', title: 'Computer Laboratory', category: 'Laboratory', imageUrl: '/computer_lab.jpg', uploadedAt: new Date() },
-                { _id: '3', title: 'Administrative Office', category: 'Campus', imageUrl: '/administrive office.jpg', uploadedAt: new Date() },
-                { _id: '4', title: 'HOD Cabin', category: 'Campus', imageUrl: '/Hod cabin.jpg', uploadedAt: new Date() },
-                { _id: '5', title: 'Computer Center', category: 'Laboratory', imageUrl: '/computer_center.jpg', uploadedAt: new Date() },
-            ]);
+            console.error('Error fetching gallery images:', error);
+            setImages([]);
         }
         setLoading(false);
     };

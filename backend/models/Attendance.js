@@ -36,6 +36,16 @@ const attendanceSchema = new mongoose.Schema({
     remarks: {
         type: String,
     },
+    verificationMode: {
+        type: String,
+        enum: ['Manual', 'Fingerprint', 'Face'],
+        default: 'Manual',
+    },
+    faceCapture: {
+        imageUrl: { type: String },
+        capturedAt: { type: Date },
+        detector: { type: String },
+    },
     semester: {
         type: Number,
         required: true,

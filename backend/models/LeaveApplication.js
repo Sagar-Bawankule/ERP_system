@@ -41,6 +41,59 @@ const leaveApplicationSchema = new mongoose.Schema({
         enum: ['Pending', 'Approved', 'Rejected', 'Cancelled'],
         default: 'Pending',
     },
+    approvalFlow: {
+        teacher: {
+            status: {
+                type: String,
+                enum: ['Pending', 'Approved', 'Rejected'],
+                default: 'Pending',
+            },
+            reviewedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+            },
+            reviewDate: {
+                type: Date,
+            },
+            remarks: {
+                type: String,
+            },
+        },
+        admin: {
+            status: {
+                type: String,
+                enum: ['Pending', 'Approved', 'Rejected'],
+                default: 'Pending',
+            },
+            reviewedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+            },
+            reviewDate: {
+                type: Date,
+            },
+            remarks: {
+                type: String,
+            },
+        },
+        superAdmin: {
+            status: {
+                type: String,
+                enum: ['Pending', 'Approved', 'Rejected'],
+                default: 'Pending',
+            },
+            reviewedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+            },
+            reviewDate: {
+                type: Date,
+            },
+            remarks: {
+                type: String,
+            },
+        },
+    },
     documents: [{
         name: { type: String },
         url: { type: String },

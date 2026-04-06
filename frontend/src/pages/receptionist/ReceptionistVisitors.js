@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiUser, FiClock, FiLogOut, FiTrash2, FiEye } from 'react-icons/fi';
+import { FiUser, FiClock, FiLogOut, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import '../student/StudentPages.css';
@@ -17,32 +17,7 @@ const ReceptionistVisitors = () => {
             if (res.data.success) setVisitors(res.data.data);
         } catch (error) {
             console.error('Error:', error);
-            // Fallback data for demo
-            setVisitors([
-                {
-                    _id: '1',
-                    visitorName: 'Rahul Deshmukh',
-                    phone: '9876543210',
-                    purpose: 'Meeting with Principal',
-                    personToMeet: 'Dr. Sharma',
-                    idProof: 'Aadhar Card',
-                    status: 'open',
-                    createdAt: new Date().toISOString(),
-                    checkInTime: new Date().toISOString()
-                },
-                {
-                    _id: '2',
-                    visitorName: 'Priya Patil',
-                    phone: '9876543211',
-                    purpose: 'Document Collection',
-                    personToMeet: 'Admin Office',
-                    idProof: 'PAN Card',
-                    status: 'closed',
-                    createdAt: new Date(Date.now() - 2*60*60*1000).toISOString(),
-                    checkInTime: new Date(Date.now() - 2*60*60*1000).toISOString(),
-                    checkOutTime: new Date(Date.now() - 1*60*60*1000).toISOString()
-                }
-            ]);
+            setVisitors([]);
         }
         setLoading(false);
     }, [statusFilter]);
@@ -57,11 +32,7 @@ const ReceptionistVisitors = () => {
                 fetchVisitors();
             }
         } catch (error) {
-            toast.success('Visitor checked out (demo)');
-            // Update local state for demo
-            setVisitors(prev => prev.map(v =>
-                v._id === id ? {...v, status: 'closed', checkOutTime: new Date().toISOString()} : v
-            ));
+            toast.error(error.response?.data?.message || 'Failed to checkout visitor');
         }
     };
 
@@ -72,8 +43,7 @@ const ReceptionistVisitors = () => {
             toast.success('Visitor record deleted');
             fetchVisitors();
         } catch (error) {
-            toast.success('Record deleted (demo)');
-            setVisitors(prev => prev.filter(v => v._id !== id));
+            toast.error(error.response?.data?.message || 'Failed to delete visitor record');
         }
     };
 

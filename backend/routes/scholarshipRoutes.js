@@ -17,7 +17,7 @@ const { uploadMiddleware } = require('../middleware/upload');
 
 // Public routes
 router.get('/', getScholarships);
-router.get('/:id', getScholarship);
+router.get('/:id([0-9a-fA-F]{24})', getScholarship);
 
 // Protected routes
 router.use(protect);

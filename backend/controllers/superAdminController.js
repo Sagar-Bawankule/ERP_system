@@ -216,6 +216,37 @@ const getRolesConfig = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Reset user password
+// @route   PUT /api/super-admin/users/:id/reset-password
+// @access  Private (Super Admin only)
+const resetUserPassword = asyncHandler(async (req, res) => {
+    const { newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password must be at least 6 characters long',
+        });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found',
+        });
+    }
+
+    // Update password (will be auto-hashed by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+        success: true,
+        message: `Password updated successfully for ${user.firstName} ${user.lastName}`,
+    });
+});
+
 module.exports = {
     getSuperAdminDashboard,
     getAllUsers,
@@ -224,4 +255,5 @@ module.exports = {
     toggleUserStatus,
     deleteUser,
     getRolesConfig,
+    resetUserPassword,
 };

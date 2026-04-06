@@ -5,6 +5,8 @@ const TeachingAssignment = require('../models/TeachingAssignment');
 const Class = require('../models/Class');
 const Notification = require('../models/Notification');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { exec } = require('child_process');
+const path = require('path');
 
 // @desc    Mark attendance using Teaching Assignment
 // @route   POST /api/attendance/mark
@@ -212,6 +214,7 @@ const getStudentAttendance = asyncHandler(async (req, res) => {
 // @access  Private
 const getAttendanceSummary = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
+    const { month } = req.query;
 
     const student = await Student.findById(studentId);
     if (!student) {
@@ -221,8 +224,16 @@ const getAttendanceSummary = asyncHandler(async (req, res) => {
         });
     }
 
+    const matchQuery = { student: student._id };
+    if (month) {
+        const [year, monthNum] = month.split('-');
+        const start = new Date(year, monthNum - 1, 1);
+        const end = new Date(year, monthNum, 0, 23, 59, 59);
+        matchQuery.date = { $gte: start, $lte: end };
+    }
+
     const summary = await Attendance.aggregate([
-        { $match: { student: student._id } },
+        { $match: matchQuery },
         {
             $group: {
                 _id: '$subject',
@@ -232,6 +243,9 @@ const getAttendanceSummary = asyncHandler(async (req, res) => {
                 },
                 absent: {
                     $sum: { $cond: [{ $eq: ['$status', 'Absent'] }, 1, 0] },
+                },
+                late: {
+                    $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] },
                 },
             },
         },
@@ -250,6 +264,7 @@ const getAttendanceSummary = asyncHandler(async (req, res) => {
                 total: 1,
                 present: 1,
                 absent: 1,
+                late: 1,
                 percentage: {
                     $round: [{ $multiply: [{ $divide: ['$present', '$total'] }, 100] }, 2],
                 },
@@ -262,8 +277,10 @@ const getAttendanceSummary = asyncHandler(async (req, res) => {
         (acc, curr) => ({
             total: acc.total + curr.total,
             present: acc.present + curr.present,
+            absent: acc.absent + curr.absent,
+            late: acc.late + curr.late,
         }),
-        { total: 0, present: 0 }
+        { total: 0, present: 0, absent: 0, late: 0 }
     );
 
     const overallPercentage = overall.total > 0
@@ -384,7 +401,25 @@ const updateAttendance = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Self mark attendance for student (Fingerprint Dummy)
+const getUploadedFileUrl = (filePath) => {
+    if (!filePath) return null;
+
+    const normalized = filePath.replace(/\\/g, '/');
+    const uploadsIndex = normalized.lastIndexOf('/uploads/');
+
+    if (uploadsIndex === -1) {
+        const uploadsToken = '/uploads';
+        const tokenIndex = normalized.lastIndexOf(uploadsToken);
+        if (tokenIndex !== -1) {
+            return normalized.slice(tokenIndex);
+        }
+        return null;
+    }
+
+    return normalized.slice(uploadsIndex);
+};
+
+// @desc    Self mark attendance for student (Fingerprint)
 // @route   POST /api/attendance/self-mark
 // @access  Private (Student)
 const selfMarkAttendance = asyncHandler(async (req, res) => {
@@ -396,7 +431,7 @@ const selfMarkAttendance = asyncHandler(async (req, res) => {
         });
     }
 
-    // Find any subject to satisfy schema (since it's a dummy button)
+    // Find a subject to associate with the attendance record
     const subject = await Subject.findOne();
     const teacherObj = await require('../models/Teacher').findOne();
 
@@ -425,7 +460,9 @@ const selfMarkAttendance = asyncHandler(async (req, res) => {
             date: today,
             status: 'Present',
             lectureNumber: 1,
-            remarks: 'Self Marked via Fingerprint Dummy',
+            remarks: 'Self Marked via Fingerprint',
+            verificationMode: 'Fingerprint',
+            faceCapture: null,
             semester: student.semester || 1,
             department: student.department || 'General',
             section: student.section || 'A',
@@ -440,6 +477,199 @@ const selfMarkAttendance = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Self mark attendance using face capture
+// @route   POST /api/attendance/self-mark-face
+// @access  Private (Student)
+const selfMarkFaceAttendance = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            success: false,
+            message: 'Face capture image is required',
+        });
+    }
+
+    if (!req.file.mimetype || !req.file.mimetype.startsWith('image/')) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid face capture file type',
+        });
+    }
+
+    const student = await Student.findOne({ user: req.user.id });
+    if (!student) {
+        return res.status(404).json({
+            success: false,
+            message: 'Student profile not found',
+        });
+    }
+
+    // Find a subject to associate with the attendance record
+    const subject = await Subject.findOne();
+    const teacherObj = await require('../models/Teacher').findOne();
+
+    if (!subject || !teacherObj) {
+        return res.status(400).json({
+            success: false,
+            message: 'System setup incomplete. Cannot mark attendance.',
+        });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const fileUrl = getUploadedFileUrl(req.file.path);
+    if (!fileUrl) {
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to store face capture image',
+        });
+    }
+
+    const detectorName = req.body.detector || 'browser-face-detector';
+
+    const attendance = await Attendance.findOneAndUpdate(
+        {
+            student: student._id,
+            subject: subject._id,
+            date: today,
+            lectureNumber: 1,
+        },
+        {
+            student: student._id,
+            subject: subject._id,
+            teacher: teacherObj._id,
+            date: today,
+            status: 'Present',
+            lectureNumber: 1,
+            remarks: 'Self Marked via Face Detection',
+            verificationMode: 'Face',
+            faceCapture: {
+                imageUrl: fileUrl,
+                capturedAt: new Date(),
+                detector: detectorName,
+            },
+            semester: student.semester || 1,
+            department: student.department || 'General',
+            section: student.section || 'A',
+        },
+        { upsert: true, new: true }
+    );
+
+    res.status(201).json({
+        success: true,
+        message: 'Attendance marked successfully via Face Detection!',
+        data: attendance,
+    });
+});
+
+// @desc    Detect fingerprint sensor device (Windows USB check)
+// @route   GET /api/attendance/sensor-status
+// @access  Private (Student)
+const getFingerprintSensorStatus = asyncHandler(async (req, res) => {
+    const usbServiceUrl = process.env.USB_SENSOR_SERVICE_URL || 'http://127.0.0.1:5005/api/usb-status';
+    const usbServiceCommand = `python "${path.join(__dirname, '..', 'utils', 'fingerprint_sensor_service.py')}"`;
+    const checkUsbServiceCommand = `powershell -NoProfile -Command "(Invoke-WebRequest -UseBasicParsing '${usbServiceUrl}' -TimeoutSec 3).StatusCode"`;
+
+    // Try dedicated local USB service first
+    return exec(checkUsbServiceCommand, { timeout: 5000 }, (svcErr) => {
+        if (!svcErr) {
+            const readUsbServiceCommand = `powershell -NoProfile -Command "(Invoke-WebRequest -UseBasicParsing '${usbServiceUrl}' -TimeoutSec 3).Content"`;
+            return exec(readUsbServiceCommand, { timeout: 5000 }, (readErr, readStdout) => {
+                if (!readErr && readStdout) {
+                    try {
+                        const payload = JSON.parse(readStdout);
+                        const connected = !!payload.connected;
+                        return res.json({
+                            success: true,
+                            data: {
+                                connected,
+                                mode: 'usb-service',
+                                message: connected ? 'USB/sensor device connected' : 'Sensor not detected',
+                                deviceName: payload.device_name || null,
+                                deviceCount: payload.device_count || 0,
+                            },
+                        });
+                    } catch (jsonError) {
+                        // fall through to other checks
+                    }
+                }
+                // fall through to built-in checks if service read fails
+                return runBuiltInDetection();
+            });
+        }
+
+        // Service is not running: try to start it in background and continue with built-in checks
+        exec(`powershell -NoProfile -Command "Start-Process -WindowStyle Hidden -FilePath python -ArgumentList '${path.join(__dirname, '..', 'utils', 'fingerprint_sensor_service.py').replace(/\\/g, '\\\\')}'"`, { timeout: 5000 }, () => {
+            return runBuiltInDetection();
+        });
+    });
+
+    function runBuiltInDetection() {
+    const command = `python -c "import wmi; c=wmi.WMI(); devices=c.Win32_USBControllerDevice(); print('\\n'.join([str(d.Dependent) for d in devices]))"`;
+
+    exec(command, { timeout: 8000 }, (error, stdout, stderr) => {
+        if (error || stderr) {
+            // Fallback: PowerShell USB/HID scan (works even when python/wmi is unavailable)
+            const psCommand = `$usb = Get-PnpDevice -PresentOnly | Where-Object { $_.Class -in @('USB','HIDClass','Mouse','Biometric') -or $_.FriendlyName -match 'USB|HID|Mouse|Biometric|Fingerprint' }; $usb | Select-Object -ExpandProperty FriendlyName`;
+            return exec(`powershell -NoProfile -Command "${psCommand}"`, { timeout: 8000 }, (psError, psStdout) => {
+                if (psError) {
+                    return res.json({
+                        success: true,
+                        data: {
+                            connected: false,
+                            mode: 'none',
+                            message: 'Sensor not detected',
+                        },
+                    });
+                }
+
+                const psOutput = (psStdout || '').toLowerCase();
+                const lines = psOutput.split('\n').map((l) => l.trim()).filter(Boolean);
+                const connected = lines.some((line) =>
+                    line.includes('usb') && (
+                        line.includes('mouse') ||
+                        line.includes('hid') ||
+                        line.includes('finger') ||
+                        line.includes('biometric') ||
+                        line.includes('sensor')
+                    )
+                );
+
+                return res.json({
+                    success: true,
+                    data: {
+                        connected,
+                        mode: 'powershell',
+                        message: connected ? 'USB/sensor device connected' : 'Sensor not detected',
+                    },
+                });
+            });
+        }
+
+        const output = (stdout || '').toLowerCase();
+        const keywords = [
+            'finger',
+            'biometric',
+            'validity',
+            'synaptics',
+            'goodix',
+            'elan',
+            'authentec',
+        ];
+        const connected = keywords.some((k) => output.includes(k));
+
+        return res.json({
+            success: true,
+            data: {
+                connected,
+                mode: 'wmi',
+                message: connected ? 'Fingerprint sensor connected' : 'Sensor not detected',
+            },
+        });
+    });
+    }
+});
+
 module.exports = {
     markAttendance,
     getClassAttendance,
@@ -448,4 +678,6 @@ module.exports = {
     getAttendanceAnalytics,
     updateAttendance,
     selfMarkAttendance,
+    selfMarkFaceAttendance,
+    getFingerprintSensorStatus,
 };

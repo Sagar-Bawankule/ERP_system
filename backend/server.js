@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const { spawn } = require('child_process');
 const connectDB = require('./config/db');
 const { configureCloudinary } = require('./config/cloudinary');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -182,6 +183,21 @@ app.listen(PORT, () => {
     console.log('║                                                          ║');
     console.log('╚══════════════════════════════════════════════════════════╝');
     console.log('');
+
+    // Auto-start fingerprint sensor service
+    const sensorServicePath = path.join(__dirname, 'utils', 'fingerprint_sensor_service.py');
+    try {
+        const sensorProcess = spawn('python', [sensorServicePath], {
+            detached: true,
+            stdio: 'ignore',
+            windowsHide: true,
+        });
+        sensorProcess.unref();
+        console.log('🔐 Fingerprint sensor service started on http://127.0.0.1:5005');
+    } catch (error) {
+        console.log('⚠️  Fingerprint sensor service not started (Python/dependencies required)');
+        console.log('   Install: pip install flask flask-cors wmi pywin32');
+    }
 });
 
 // Handle unhandled promise rejections
