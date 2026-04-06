@@ -44,3 +44,7 @@ public/uploads/
 # Database
 *.sqlite
 *.db
+
+# Python cache
+__pycache__/
+*.py[cod]
